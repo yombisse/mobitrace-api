@@ -12,8 +12,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('telephone', 20);
-            $table->string('nom', 100);
-            $table->string('prenoms', 150);
+            $table->string('nom', 100)->nullable();
+            $table->string('prenoms', 150)->nullable();
             $table->date('date_naissance')->nullable();
             $table->string('nationalite', 100)->nullable();
             $table->string('type_piece', 50)->nullable();

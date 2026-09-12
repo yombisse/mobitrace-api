@@ -19,10 +19,11 @@ return new class extends Migration
             $table->string('password');
             $table->string('code_agent')->unique()->nullable();
             $table->string('photo')->nullable();
-            $table->string('telephone')->nullable();
+            $table->string('telephone')->unique();
             $table->string('localisation_point')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
     }

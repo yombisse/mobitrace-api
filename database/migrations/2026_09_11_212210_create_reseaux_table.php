@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('nom', 100);
             $table->string('code', 50)->unique();
             $table->string('logo')->nullable();
+            $table->softDeletes();
         });
     }
 
