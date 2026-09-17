@@ -6,9 +6,9 @@ MobiTrace est une API RESTful pour la gestion des transactions de transfert d'ar
 
 **Base URL:** `https://headscarf-spotless-onto.ngrok-free.dev/api/v1`
 
-**Version:** 1.0
+**Version:** 1.1
 
-**Date:** 2026-09-14
+**Date:** 2026-09-17
 
 ## Authentication
 
@@ -425,6 +425,9 @@ Lister les transactions d'un client.
       "statut": "ENREGISTREE|MODIFIEE|ANNULEE",
       "version": "integer",
       "created_at": "datetime",
+      "consentement_recap": "string|null",
+      "consentement_methode": "string",
+      "consentement_confirme_le": "datetime|null",
       "client": {
         "id": "uuid",
         "telephone": "string",
@@ -510,7 +513,9 @@ Créer une nouvelle transaction (dépôt ou retrait).
   "type_operation": "depot|retrait (required)",
   "montant": "decimal (required, gt:0)",
   "solde_apres_operation": "decimal (optional, nullable, gte:0)",
-  "note": "string (optional, nullable)"
+  "note": "string (optional, nullable)",
+  "consentement_recap": "string (optional, nullable)",
+  "consentement_methode": "string (optional, in:confirmation_client)"
 }
 ```
 
@@ -529,7 +534,10 @@ Créer une nouvelle transaction (dépôt ou retrait).
       "note": "string|null",
       "statut": "ENREGISTREE",
       "version": "integer",
-      "created_at": "datetime"
+      "created_at": "datetime",
+      "consentement_recap": "string|null",
+      "consentement_methode": "string",
+      "consentement_confirme_le": "datetime|null"
     },
     "client": {
       "id": "uuid",
@@ -579,6 +587,9 @@ Lister les transactions avec filtres et pagination.
       "statut": "ENREGISTREE|MODIFIEE|ANNULEE",
       "version": "integer",
       "created_at": "datetime",
+      "consentement_recap": "string|null",
+      "consentement_methode": "string",
+      "consentement_confirme_le": "datetime|null",
       "client": {
         "id": "uuid",
         "telephone": "string",
@@ -629,6 +640,9 @@ Récupérer les détails d'une transaction spécifique.
   "statut": "ENREGISTREE|MODIFIEE|ANNULEE",
   "version": "integer",
   "created_at": "datetime",
+  "consentement_recap": "string|null",
+  "consentement_methode": "string",
+  "consentement_confirme_le": "datetime|null",
   "client": {
     "id": "uuid",
     "telephone": "string",
@@ -681,6 +695,9 @@ Modifier une transaction existante.
   "statut": "MODIFIEE",
   "version": "integer",
   "created_at": "datetime",
+  "consentement_recap": "string|null",
+  "consentement_methode": "string",
+  "consentement_confirme_le": "datetime|null",
   "client": {
     "id": "uuid",
     "telephone": "string",
@@ -730,6 +747,9 @@ Annuler une transaction.
   "statut": "ANNULEE",
   "version": "integer",
   "created_at": "datetime",
+  "consentement_recap": "string|null",
+  "consentement_methode": "string",
+  "consentement_confirme_le": "datetime|null",
   "client": {
     "id": "uuid",
     "telephone": "string",
@@ -747,6 +767,81 @@ Annuler une transaction.
   }
 }
 ```
+
+### 3.6 Confirm Consent
+Confirmer le consentement du client pour une transaction.
+
+**Endpoint:** `POST /transactions/{transaction}/confirm-consent`
+
+**Auth:** Requis (Bearer token)
+
+**Rate Limit:** 120/minute
+
+**URL Parameters:**
+- `transaction` (required, uuid) - Transaction ID
+
+**Request Body:**
+```json
+{
+  "consentement_recap": "string (optional, nullable)"
+}
+```
+
+**Response (200):**
+```json
+{
+  "id": "uuid",
+  "type_operation": "depot|retrait",
+  "montant": "decimal",
+  "reference": "string|null",
+  "solde_apres_operation": "decimal|null",
+  "note": "string|null",
+  "statut": "ENREGISTREE",
+  "version": "integer",
+  "created_at": "datetime",
+  "consentement_recap": "string|null",
+  "consentement_methode": "string",
+  "consentement_confirme_le": "datetime",
+  "client": {
+    "id": "uuid",
+    "telephone": "string",
+    "nom": "string",
+    "prenoms": "string"
+  },
+  "reseau": {
+    "id": "uuid",
+    "nom": "string",
+    "code": "string"
+  },
+  "user": {
+    "id": "uuid",
+    "name": "string"
+  }
+}
+```
+
+### 3.7 Export Transactions
+Exporter les transactions en PDF pour audit.
+
+**Endpoint:** `GET /transactions/export`
+
+**Auth:** Requis (Bearer token)
+
+**Rate Limit:** 120/minute
+
+**Query Parameters:**
+- `debut` (required, date) - Date de début (format YYYY-MM-DD)
+- `fin` (required, date, after_or_equal:debut) - Date de fin (format YYYY-MM-DD)
+- `reseau` (optional, string) - Filtre par réseau mobile money
+
+**Response (200):**
+Returns a PDF file download with the following content:
+- Header: Agent name/code, period, network filter (if any), generation date, transaction count, total amount
+- Table with columns: Date/heure, Référence, Numéro client, Réseau, Type, Montant, Consentement, Solde après opération (if data exists)
+- Consentement display: ✓ HH:MM if confirmed, — if not
+- Footer: Total amount and transaction count
+
+**Note:** Toutes les transactions de la période sont incluses, sans limite de pagination.
 
 ---
 
@@ -930,6 +1025,9 @@ Récupérer le résumé du tableau de bord.
       "statut": "ENREGISTREE|MODIFIEE|ANNULEE",
       "version": "integer",
       "created_at": "datetime",
+      "consentement_recap": "string|null",
+      "consentement_methode": "string",
+      "consentement_confirme_le": "datetime|null",
       "client": {
         "id": "uuid",
         "telephone": "string",
@@ -1045,7 +1143,10 @@ Vérifier si l'API authentifiée est opérationnelle.
   "version": "integer",
   "synced_at": "datetime|null",
   "created_at": "datetime",
-  "updated_at": "datetime"
+  "updated_at": "datetime",
+  "consentement_recap": "text|null",
+  "consentement_methode": "string",
+  "consentement_confirme_le": "datetime|null"
 }
 ```
 
@@ -1157,6 +1258,16 @@ Vérifier si l'API authentifiée est opérationnelle.
 ---
 
 ## Changelog
+
+### Version 1.1 (2026-09-17)
+- Ajout du consentement client sur les transactions
+  - Nouveaux champs: consentement_recap, consentement_methode, consentement_confirme_le
+  - Endpoint POST /transactions/{transaction}/confirm-consent pour confirmer le consentement
+  - Une transaction n'est considérée exécutée que si consentement_confirme_le est renseigné
+- Ajout de l'export PDF des transactions pour audit
+  - Endpoint GET /transactions/export avec filtres par date et réseau
+  - Génération de PDF avec tableau détaillé des transactions
+  - Inclut les informations de consentement dans l'export
 
 ### Version 1.0 (2026-09-14)
 - Documentation initiale

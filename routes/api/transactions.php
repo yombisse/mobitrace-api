@@ -9,4 +9,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show']);
     Route::patch('/transactions/{transaction}', [TransactionController::class, 'update']);
     Route::post('/transactions/{transaction}/cancel', [TransactionController::class, 'cancel']);
+    Route::post('/transactions/{transaction}/confirm-consent', [TransactionController::class, 'confirmConsent']);
+    Route::get('/transactions/export', [TransactionController::class, 'export']);
 });

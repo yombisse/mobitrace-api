@@ -52,6 +52,9 @@ class TransactionService
                 'note' => $data['note'] ?? null,
                 'statut' => 'ENREGISTREE',
                 'version' => 1,
+                'consentement_recap' => $data['consentement_recap'] ?? null,
+                'consentement_methode' => $data['consentement_methode'] ?? 'confirmation_client',
+                'consentement_confirme_le' => null,
             ]);
 
             $this->recordHistory(
@@ -166,6 +169,44 @@ class TransactionService
         });
     }
 
+    public function confirmConsent(User $user, Transaction $transaction, ?string $consentementRecap = null): Transaction
+    {
+        return DB::transaction(function () use ($user, $transaction, $consentementRecap): Transaction {
+            $transaction = $this->findOwned($user, $transaction);
+
+            if ($transaction->consentement_confirme_le !== null) {
+                throw new ApiException('Le consentement a déjà été confirmé.', 422);
+            }
+
+            $transaction->consentement_confirme_le = now();
+            if ($consentementRecap !== null) {
+                $transaction->consentement_recap = $consentementRecap;
+            }
+            $transaction->save();
+
+            return $transaction->refresh()->load(['client', 'reseau', 'user']);
+        });
+    }
+
+    public function getForExport(User $user, array $filters): array
+    {
+        $query = $this->ownedQuery($user)->with(['client', 'reseau', 'user']);
+
+        if (! empty($filters['debut'])) {
+            $query->whereDate('created_at', '>=', $filters['debut']);
+        }
+
+        if (! empty($filters['fin'])) {
+            $query->whereDate('created_at', '<=', $filters['fin']);
+        }
+
+        if (! empty($filters['reseau'])) {
+            $query->whereHas('reseau', fn (Builder $builder) => $builder->where('code', $filters['reseau']));
+        }
+
+        return $query->orderBy('created_at', 'asc')->get()->all();
+    }
+
     private function completeClient(Client $client, array $data): void
     {
         foreach ($this->clientData($data) as $field => $value) {
@@ -236,5 +277,10 @@ class TransactionService
     private function perPage(int|string|null $perPage): int
     {
         return min(max((int) ($perPage ?: 20), 1), 100);
+    }
+
+    public function isExecuted(Transaction $transaction): bool
+    {
+        return $transaction->consentement_confirme_le !== null;
     }
 }

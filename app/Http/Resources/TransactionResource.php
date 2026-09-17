@@ -18,6 +18,9 @@ class TransactionResource extends ApiResource
             'statut' => $this->statut,
             'version' => $this->version,
             'created_at' => $this->created_at,
+            'consentement_recap' => $this->consentement_recap,
+            'consentement_methode' => $this->consentement_methode,
+            'consentement_confirme_le' => $this->consentement_confirme_le,
             'client' => $this->whenLoaded('client', fn () => [
                 'id' => $this->client->id,
                 'telephone' => $this->client->telephone,

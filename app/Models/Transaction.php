@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'sync_status',
     'version',
     'synced_at',
+    'consentement_recap',
+    'consentement_methode',
+    'consentement_confirme_le',
 ])]
 class Transaction extends Model
 {
@@ -36,6 +39,7 @@ class Transaction extends Model
             'solde_apres_operation' => 'decimal:2',
             'version' => 'integer',
             'synced_at' => 'datetime',
+            'consentement_confirme_le' => 'datetime',
         ];
     }
 
