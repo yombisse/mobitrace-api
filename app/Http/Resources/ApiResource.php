@@ -10,6 +10,7 @@ abstract class ApiResource extends JsonResource
     public function with(Request $request): array
     {
         return [
+            'success' => true,
             'message' => 'Opération effectuée avec succès.',
         ];
     }

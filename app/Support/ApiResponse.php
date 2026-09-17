@@ -8,15 +8,19 @@ use Illuminate\Http\JsonResponse;
 final class ApiResponse
 {
     public static function success(
-        mixed $data = [],
+        mixed $data = null,
         string $message = 'Opération effectuée avec succès.',
         int $status = 200,
         array $meta = [],
     ): JsonResponse {
         $response = [
-            'data' => $data,
+            'success' => true,
             'message' => $message,
         ];
+
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
 
         if ($meta !== []) {
             $response['meta'] = $meta;

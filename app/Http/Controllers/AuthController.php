@@ -45,7 +45,7 @@ class AuthController extends Controller
     {
         $this->authService->logout($request->user());
 
-        return response()->json(['message' => 'Déconnexion réussie.']);
+        return ApiResponse::success(null, 'Déconnexion réussie.');
     }
 
     public function me(Request $request): UserResource
@@ -68,16 +68,14 @@ class AuthController extends Controller
             $request->string('password')->toString(),
         );
 
-        return response()->json(['message' => 'Mot de passe modifié avec succès.']);
+        return ApiResponse::success(null, 'Mot de passe modifié avec succès.');
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
         $this->authService->sendPasswordResetCode($request->string('email')->toString());
 
-        return response()->json([
-            'message' => 'Si un compte existe avec cet email, un code a été envoyé.',
-        ]);
+        return ApiResponse::success(null, 'Si un compte existe avec cet email, un code a été envoyé.');
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
@@ -88,8 +86,6 @@ class AuthController extends Controller
             $request->string('password')->toString(),
         );
 
-        return response()->json([
-            'message' => 'Mot de passe réinitialisé avec succès.',
-        ]);
+        return ApiResponse::success(null, 'Mot de passe réinitialisé avec succès.');
     }
 }

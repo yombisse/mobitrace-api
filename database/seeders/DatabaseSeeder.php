@@ -17,19 +17,35 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-        Reseau::factory()->createMany([
+        foreach ([
             ['nom' => 'Orange Money', 'code' => 'OM'],
             ['nom' => 'Moov Money', 'code' => 'MV'],
             ['nom' => 'Wave', 'code' => 'WA'],
             ['nom' => 'Sank Money', 'code' => 'SM'],
             ['nom' => 'Telecel Money', 'code' => 'TM'],
-        ]);
+        ] as $reseau) {
+            Reseau::firstOrCreate(['code' => $reseau['code']], $reseau);
+        }
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'telephone' => '70000000',
-            'code_agent' => 'AG-00001',
-        ]);
+        User::firstOrCreate(
+            ['telephone' => '70000000'],
+            [
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+                'code_agent' => 'AG-00001',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['telephone' => '22606913191'],
+            [
+                'name' => 'Test User Burkina',
+                'email' => 'testburkina@example.com',
+                'code_agent' => 'AG-00002',
+                'password' => bcrypt('069131'),
+            ]
+        );
+
+        $this->call(TransactionSeeder::class);
     }
 }

@@ -48,6 +48,6 @@ class ReseauController extends Controller
     {
         $this->reseauService->delete($reseau);
 
-        return response()->json(['message' => 'Réseau supprimé avec succès.']);
+        return ApiResponse::success(null, 'Réseau supprimé avec succès.');
     }
 }

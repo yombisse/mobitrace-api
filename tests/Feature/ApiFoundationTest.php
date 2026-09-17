@@ -10,7 +10,9 @@ class ApiFoundationTest extends TestCase
     {
         $this->getJson('/api/v1/health')
             ->assertOk()
+            ->assertJsonStructure(['success', 'message', 'data'])
             ->assertJson([
+                'success' => true,
                 'data' => ['status' => 'ok'],
                 'message' => 'API opérationnelle.',
             ]);
@@ -21,6 +23,7 @@ class ApiFoundationTest extends TestCase
         $this->getJson('/api/v1/health/authenticated')
             ->assertUnauthorized()
             ->assertJson([
+                'success' => false,
                 'message' => 'Unauthenticated.',
             ]);
     }
@@ -30,7 +33,19 @@ class ApiFoundationTest extends TestCase
         $this->getJson('/api/v1/does-not-exist')
             ->assertNotFound()
             ->assertJson([
+                'success' => false,
                 'message' => 'Ressource introuvable.',
+            ]);
+    }
+
+    public function test_validation_errors_use_the_standard_error_envelope(): void
+    {
+        $this->postJson('/api/v1/auth/login', [])
+            ->assertUnprocessable()
+            ->assertJsonStructure(['success', 'message', 'errors'])
+            ->assertJson([
+                'success' => false,
+                'message' => 'Les données fournies sont invalides.',
             ]);
     }
 }

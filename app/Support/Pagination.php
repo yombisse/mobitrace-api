@@ -7,7 +7,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 final class Pagination
 {
     /**
-     * @return array{current_page: int, per_page: int, total: int}
+    * @return array{current_page: int, per_page: int, total: int, last_page: int}
      */
     public static function meta(LengthAwarePaginator $paginator): array
     {
@@ -15,6 +15,7 @@ final class Pagination
             'current_page' => $paginator->currentPage(),
             'per_page' => $paginator->perPage(),
             'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
         ];
     }
 }
