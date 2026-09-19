@@ -14,15 +14,17 @@ WORKDIR /app
 # afin de profiter du cache Docker
 COPY composer.json composer.lock ./
 
+# Copier le code de l'application AVANT composer install
+# pour que artisan soit disponible pour les hooks
+COPY . .
+
 # Installer uniquement les dépendances de production
 RUN composer install \
     --no-dev \
     --no-interaction \
     --prefer-dist \
-    --optimize-autoloader
-
-# Copier le code de l'application
-COPY . .
+    --optimize-autoloader \
+    --no-scripts
 
 # Vérifier/générer l'autoload optimisé
 RUN composer dump-autoload \
