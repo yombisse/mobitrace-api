@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Test User',
                 'email' => 'test@example.com',
                 'code_agent' => 'AG-00001',
+                'password' => bcrypt('password'),
             ]
         );
 

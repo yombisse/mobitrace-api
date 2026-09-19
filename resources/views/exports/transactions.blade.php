@@ -55,6 +55,18 @@
         .sans-consentement {
             color: #999;
         }
+        .statut-enregistree {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .statut-modifiee {
+            color: #fd7e14;
+            font-weight: bold;
+        }
+        .statut-annulee {
+            color: #dc3545;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>

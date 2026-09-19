@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Documentation
+README.md
+CHANGELOG.md
+AGENTS.md
+CLAUDE.md
+API_DOCUMENTATION.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Cache
+bootstrap/cache/*
+node_modules
+vendor
+
+# Tests
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Build artifacts
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Temporary files
+*.tmp
+*.temp
+test_releve.pdf

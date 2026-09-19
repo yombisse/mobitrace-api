@@ -6,9 +6,9 @@ MobiTrace est une API RESTful pour la gestion des transactions de transfert d'ar
 
 **Base URL:** `https://headscarf-spotless-onto.ngrok-free.dev/api/v1`
 
-**Version:** 1.1
+**Version:** 1.2
 
-**Date:** 2026-09-17
+**Date:** 2026-09-18
 
 ## Authentication
 
@@ -514,8 +514,7 @@ Créer une nouvelle transaction (dépôt ou retrait).
   "montant": "decimal (required, gt:0)",
   "solde_apres_operation": "decimal (optional, nullable, gte:0)",
   "note": "string (optional, nullable)",
-  "consentement_recap": "string (optional, nullable)",
-  "consentement_methode": "string (optional, in:confirmation_client)"
+  "client_confirme": "boolean (required, accepted)"
 }
 ```
 
@@ -560,16 +559,87 @@ Lister les transactions avec filtres et pagination.
 **Rate Limit:** 120/minute
 
 **Query Parameters:**
-- `telephone` (optional, string, max:20) - Filter by client phone
-- `search` (optional, string, max:255) - Search in reference
-- `reference` (optional, string, max:100) - Filter by reference
-- `date_debut` (optional, date) - Start date filter
-- `date_fin` (optional, date, after_or_equal:date_debut) - End date filter
-- `reseau_id` (optional, uuid, exists:reseaux) - Filter by network
-- `type_operation` (optional, depot|retrait) - Filter by operation type
-- `statut` (optional, ENREGISTREE|MODIFIEE|ANNULEE) - Filter by status
-- `page` (optional, integer, min:1) - Page number
-- `per_page` (optional, integer, min:1, max:100) - Items per page
+
+**Filtres par recherche:**
+- `telephone` (optional, string, max:20) - Filtre par numéro de téléphone du client
+- `search` (optional, string, max:255) - Recherche dans nom/prénoms du client
+- `reference` (optional, string, max:100) - Filtre par référence transactionnelle
+
+**Filtres par période:**
+- `periode` (optional, string) - Période prédéfinie : `aujourdhui`, `7jours`, `cemois`, `personnalisee`
+- `date_debut` (optional, date) - Date de début (pour période personnalisée)
+- `date_fin` (optional, date, after_or_equal:date_debut) - Date de fin (pour période personnalisée)
+
+**Filtres par réseau:**
+- `reseau_id` (optional, uuid, exists:reseaux) - Filtre par ID du réseau
+- `reseau_code` (optional, string, max:10) - Filtre par code du réseau (ex: OM, MV, WA, SM, TM)
+
+**Filtres par type et statut:**
+- `type_operation` (optional, depot|retrait) - Filtre par type d'opération
+- `statut` (optional, ENREGISTREE|MODIFIEE|ANNULEE) - Filtre par statut
+
+**Filtre par montant:**
+- `montant_min` (optional, numeric, min:0) - Montant minimum
+- `montant_max` (optional, numeric, min:0, gte:montant_min) - Montant maximum
+
+**Tri:**
+- `sort_by` (optional, string) - Champ de tri : `date`, `amount`, `created_at`, `montant` (défaut: `created_at`)
+- `sort_order` (optional, string) - Ordre de tri : `desc` (défaut), `asc`
+
+**Pagination:**
+- `page` (optional, integer, min:1) - Numéro de page
+- `per_page` (optional, integer, min:1, max:100) - Éléments par page (défaut: 20)
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Opération effectuée avec succès.",
+  "data": [
+    {
+      "id": "uuid",
+      "type_operation": "depot|retrait",
+      "montant": "decimal",
+      "reference": "string|null",
+      "solde_apres_operation": "decimal|null",
+      "note": "string|null",
+      "statut": "ENREGISTREE|MODIFIEE|ANNULEE",
+      "version": "integer",
+      "created_at": "datetime",
+      "consentement_recap": "string|null",
+      "consentement_methode": "string",
+      "consentement_confirme_le": "datetime|null",
+      "client": {
+        "id": "uuid",
+        "telephone": "string",
+        "nom": "string",
+        "prenoms": "string"
+      },
+      "reseau": {
+        "id": "uuid",
+        "nom": "string",
+        "code": "string"
+      },
+      "user": {
+        "id": "uuid",
+        "name": "string"
+      }
+    }
+  ],
+  "meta": {
+    "current_page": "integer",
+    "per_page": "integer",
+    "total": "integer",
+    "last_page": "integer",
+    "summary": {
+      "count": "integer",
+      "total": "decimal"
+    }
+  }
+}
+```
+
+**Note:** Le champ `summary` dans `meta` contient le nombre total et la somme des montants de la sélection filtrée, **en excluant les transactions ANNULEE**.
 
 **Response (200):**
 ```json
@@ -768,59 +838,7 @@ Annuler une transaction.
 }
 ```
 
-### 3.6 Confirm Consent
-Confirmer le consentement du client pour une transaction.
-
-**Endpoint:** `POST /transactions/{transaction}/confirm-consent`
-
-**Auth:** Requis (Bearer token)
-
-**Rate Limit:** 120/minute
-
-**URL Parameters:**
-- `transaction` (required, uuid) - Transaction ID
-
-**Request Body:**
-```json
-{
-  "consentement_recap": "string (optional, nullable)"
-}
-```
-
-**Response (200):**
-```json
-{
-  "id": "uuid",
-  "type_operation": "depot|retrait",
-  "montant": "decimal",
-  "reference": "string|null",
-  "solde_apres_operation": "decimal|null",
-  "note": "string|null",
-  "statut": "ENREGISTREE",
-  "version": "integer",
-  "created_at": "datetime",
-  "consentement_recap": "string|null",
-  "consentement_methode": "string",
-  "consentement_confirme_le": "datetime",
-  "client": {
-    "id": "uuid",
-    "telephone": "string",
-    "nom": "string",
-    "prenoms": "string"
-  },
-  "reseau": {
-    "id": "uuid",
-    "nom": "string",
-    "code": "string"
-  },
-  "user": {
-    "id": "uuid",
-    "name": "string"
-  }
-}
-```
-
-### 3.7 Export Transactions
+### 3.6 Export Transactions
 Exporter les transactions en PDF pour audit.
 
 **Endpoint:** `GET /transactions/export`
@@ -830,18 +848,29 @@ Exporter les transactions en PDF pour audit.
 **Rate Limit:** 120/minute
 
 **Query Parameters:**
-- `debut` (required, date) - Date de début (format YYYY-MM-DD)
-- `fin` (required, date, after_or_equal:debut) - Date de fin (format YYYY-MM-DD)
+- `debut` (required, date, before_or_equal:today) - Date de début (format YYYY-MM-DD)
+- `fin` (required, date, after_or_equal:debut, before_or_equal:today) - Date de fin (format YYYY-MM-DD)
 - `reseau` (optional, string) - Filtre par réseau mobile money
+
+**Validation Rules:**
+- Les dates doivent être dans le passé ou aujourd'hui (pas de dates futures)
+- La période ne peut pas dépasser 3 mois
+- Maximum 2000 transactions par export (sinon erreur 422)
+- L'export est limité aux transactions de l'agent authentifié
 
 **Response (200):**
 Returns a PDF file download with the following content:
-- Header: Agent name/code, period, network filter (if any), generation date, transaction count, total amount
+- Header: Agent name/code, period, network filter (if any), generation date
 - Table with columns: Date/heure, Référence, Numéro client, Réseau, Type, Montant, Consentement, Solde après opération (if data exists)
 - Consentement display: ✓ HH:MM if confirmed, — if not
 - Footer: Total amount and transaction count
 
-**Note:** Toutes les transactions de la période sont incluses, sans limite de pagination.
+**Filename:** `releve-transactions_YYYY-MM-DD_YYYY-MM-DD.pdf`
+
+**Error Responses:**
+- `422` - Validation error (période > 3 mois, date future, trop de transactions)
+- `401` - Non authentifié
+- `500` - Erreur de génération PDF
 
 ---
 
@@ -1258,6 +1287,22 @@ Vérifier si l'API authentifiée est opérationnelle.
 ---
 
 ## Changelog
+
+### Version 1.2 (2026-09-18)
+- Simplification du workflow de consentement client
+  - Suppression de l'endpoint POST /transactions/{transaction}/confirm-consent
+  - Le consentement est maintenant obligatoire à la création via le champ client_confirme
+  - Le récapitulatif de consentement est généré automatiquement par le serveur
+  - Une transaction est créée directement avec le statut ENREGISTREE
+- Migration de la génération PDF de wkhtmltopdf à tcpdf
+  - Suppression de la dépendance barryvdh/laravel-snappy
+  - Utilisation de tecnickcom/tcpdf (PHP pur, compatible hébergement mutualisé)
+  - Génération par lots (chunk 200) pour optimiser la mémoire
+- Nouvelles règles de validation pour l'export PDF
+  - Période maximale de 3 mois
+  - Maximum 2000 transactions par export
+  - Interdiction des dates futures
+  - Nom de fichier standardisé: releve-transactions_YYYY-MM-DD_YYYY-MM-DD.pdf
 
 ### Version 1.1 (2026-09-17)
 - Ajout du consentement client sur les transactions

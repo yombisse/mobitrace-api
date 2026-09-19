@@ -26,8 +26,7 @@ class StoreTransactionRequest extends ApiRequest
             'montant' => ['required', 'numeric', 'gt:0'],
             'solde_apres_operation' => ['sometimes', 'nullable', 'numeric', 'gte:0'],
             'note' => ['sometimes', 'nullable', 'string'],
-            'consentement_recap' => ['sometimes', 'nullable', 'string'],
-            'consentement_methode' => ['sometimes', 'string', 'in:confirmation_client'],
+            'client_confirme' => ['required', 'accepted'],
         ];
     }
 }

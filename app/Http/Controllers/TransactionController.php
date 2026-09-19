@@ -3,24 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CancelTransactionRequest;
-use App\Http\Requests\ConfirmConsentRequest;
 use App\Http\Requests\ExportTransactionRequest;
 use App\Http\Requests\ListTransactionRequest;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Requests\UpdateTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
+use App\Services\ReleveTransactionsPdfService;
 use App\Services\TransactionService;
 use App\Support\ApiResponse;
 use App\Support\Pagination;
-use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class TransactionController extends Controller
 {
-    public function __construct(private readonly TransactionService $transactionService) {}
+    public function __construct(
+        private readonly TransactionService $transactionService,
+        private readonly ReleveTransactionsPdfService $pdfService
+    ) {}
 
     public function store(StoreTransactionRequest $request): JsonResponse
     {
@@ -46,7 +48,7 @@ class TransactionController extends Controller
             TransactionResource::collection($paginator->getCollection())->resolve($request),
             'Opération effectuée avec succès.',
             200,
-            Pagination::meta($paginator),
+            Pagination::meta($paginator, $paginator->summary ?? null),
         );
     }
 
@@ -75,37 +77,22 @@ class TransactionController extends Controller
         );
     }
 
-    public function confirmConsent(ConfirmConsentRequest $request, Transaction $transaction): TransactionResource
+    public function export(ExportTransactionRequest $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
     {
-        return TransactionResource::make(
-            $this->transactionService->confirmConsent(
-                $request->user(),
-                $transaction,
-                $request->string('consentement_recap')->toString(),
-            ),
-        );
-    }
+        try {
+            $filepath = $this->pdfService->generate($request->user(), $request->validated());
 
-    public function export(ExportTransactionRequest $request): Response
-    {
-        $transactions = collect($this->transactionService->getForExport($request->user(), $request->validated()));
+            $filename = basename($filepath);
 
-        $totalMontant = $transactions->sum('montant');
-        $hasSoldeApresOperation = $transactions->contains(fn ($t) => $t->solde_apres_operation !== null);
-
-        $pdf = SnappyPdf::loadView('exports.transactions', [
-            'agent' => $request->user(),
-            'debut' => \Carbon\Carbon::parse($request->input('debut')),
-            'fin' => \Carbon\Carbon::parse($request->input('fin')),
-            'reseau' => $request->input('reseau'),
-            'generatedAt' => now(),
-            'transactions' => $transactions,
-            'totalMontant' => $totalMontant,
-            'hasSoldeApresOperation' => $hasSoldeApresOperation,
-        ]);
-
-        $filename = 'transactions_'.$request->input('debut').'_'.$request->input('fin').'.pdf';
-
-        return $pdf->download($filename);
+            return response()->file($filepath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            ])->deleteFileAfterSend(app()->environment('testing') ? false : true);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

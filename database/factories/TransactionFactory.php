@@ -30,6 +30,9 @@ class TransactionFactory extends Factory
             'sync_status' => 'SYNCED',
             'version' => 1,
             'synced_at' => now(),
+            'consentement_recap' => fake()->sentence(),
+            'consentement_methode' => 'confirmation_client',
+            'consentement_confirme_le' => now(),
         ];
     }
 }

@@ -77,6 +77,9 @@ class TransactionSeeder extends Seeder
             'sync_status' => 'SYNCED',
             'version' => 1,
             'synced_at' => now(),
+            'consentement_recap' => 'Dépôt de 50000 FCFA pour le 70000001 via Orange Money',
+            'consentement_methode' => 'confirmation_client',
+            'consentement_confirme_le' => now(),
         ]);
 
         Transaction::create([
@@ -92,6 +95,9 @@ class TransactionSeeder extends Seeder
             'sync_status' => 'SYNCED',
             'version' => 1,
             'synced_at' => now(),
+            'consentement_recap' => 'Retrait de 25000 FCFA pour le 70000002 via Moov Money',
+            'consentement_methode' => 'confirmation_client',
+            'consentement_confirme_le' => now(),
         ]);
 
         Transaction::create([
@@ -107,6 +113,9 @@ class TransactionSeeder extends Seeder
             'sync_status' => 'SYNCED',
             'version' => 1,
             'synced_at' => now(),
+            'consentement_recap' => 'Dépôt de 100000 FCFA pour le 22606913192 via Wave',
+            'consentement_methode' => 'confirmation_client',
+            'consentement_confirme_le' => now(),
         ]);
 
         // Ajouter une transaction supplémentaire pour plus de tests
@@ -123,6 +132,9 @@ class TransactionSeeder extends Seeder
             'sync_status' => 'SYNCED',
             'version' => 1,
             'synced_at' => now(),
+            'consentement_recap' => 'Dépôt de 15000 FCFA pour le 70000001 via Orange Money',
+            'consentement_methode' => 'confirmation_client',
+            'consentement_confirme_le' => now(),
         ]);
 
         $this->command->info('4 transactions de test ont été créées avec succès.');

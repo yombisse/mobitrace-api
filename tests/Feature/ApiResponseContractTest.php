@@ -71,6 +71,7 @@ class ApiResponseContractTest extends TestCase
             'type_operation' => 'depot',
             'montant' => 70000,
             'solde_apres_operation' => 70000,
+            'client_confirme' => true,
         ]);
 
         $created->assertCreated()
@@ -115,5 +116,32 @@ class ApiResponseContractTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['success', 'message', 'data'])
             ->assertJsonPath('success', true);
+
+        // Test that client_confirme is required
+        $this->actingAs($user)
+            ->postJson('/api/v1/transactions', [
+                'telephone' => '70000003',
+                'nom' => 'Smith',
+                'prenoms' => 'John',
+                'reseau_id' => $reseau->id,
+                'type_operation' => 'depot',
+                'montant' => 50000,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('success', false);
+
+        // Test that client_confirme must be true
+        $this->actingAs($user)
+            ->postJson('/api/v1/transactions', [
+                'telephone' => '70000004',
+                'nom' => 'Johnson',
+                'prenoms' => 'Bob',
+                'reseau_id' => $reseau->id,
+                'type_operation' => 'depot',
+                'montant' => 30000,
+                'client_confirme' => false,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('success', false);
     }
 }
