@@ -7,7 +7,7 @@ COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # ---------- Étape 2 : PHP + Apache ----------
-FROM php:8.3-apache-bookworm
+FROM php:8.4-apache-bookworm
 WORKDIR /var/www/html
 
 RUN apt-get update && apt-get install -y \
