@@ -20,6 +20,20 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
     php artisan key:generate --force
 fi
 
+# Run database migrations
+echo "Running database migrations..."
+php artisan migrate --force
+
+# Run database seeders only on first startup
+if [ ! -f storage/.seeded ]; then
+    echo "Running database seeders for the first time..."
+    php artisan db:seed --force
+    touch storage/.seeded
+    echo "Database seeded successfully."
+else
+    echo "Database already seeded. Skipping seeders."
+fi
+
 # Clear and cache Laravel configurations
 echo "Optimizing Laravel for production..."
 php artisan config:cache --force

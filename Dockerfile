@@ -42,6 +42,11 @@ RUN { echo "memory_limit=256M"; echo "max_execution_time=60"; \
       echo "opcache.enable=1"; echo "opcache.enable_cli=0"; \
     } > /usr/local/etc/php/conf.d/production.ini
 
+# Copier et configurer l'entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 80
 
-CMD ["sh", "-c", "php artisan migrate --force || echo 'ATTENTION : la migration a échoué'; php artisan config:cache || true; php artisan route:cache || true; exec apache2-foreground"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
