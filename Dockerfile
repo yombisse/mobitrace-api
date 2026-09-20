@@ -1,24 +1,26 @@
 # ============================================================
 # MobiTrace API - Production Dockerfile
-# Laravel 13.x / PHP 8.3 / PostgreSQL / TCPDF
+# Laravel 13 / PHP 8.3 / PostgreSQL / TCPDF
 # ============================================================
 
-# ------------------------------------------------------------
-# STAGE 1 : Installation des dépendances Composer
-# ------------------------------------------------------------
+
+# ============================================================
+# STAGE 1 : Composer
+# ============================================================
+
 FROM composer:2.8 AS composer-build
 
 WORKDIR /app
 
-# Copier les fichiers Composer en premier
-# afin de profiter du cache Docker
+# Copier les fichiers Composer
 COPY composer.json composer.lock ./
 
-# Copier le code de l'application AVANT composer install
-# pour que artisan soit disponible pour les hooks
+# Copier toute l'application AVANT Composer
+# afin que artisan soit disponible
 COPY . .
 
-# Installer uniquement les dépendances de production
+# Installer les dépendances sans exécuter
+# les scripts Laravel pendant le build.
 RUN composer install \
     --no-dev \
     --no-interaction \
@@ -26,22 +28,27 @@ RUN composer install \
     --optimize-autoloader \
     --no-scripts
 
-# Vérifier/générer l'autoload optimisé
+# Générer l'autoload optimisé sans exécuter
+# les scripts Laravel.
 RUN composer dump-autoload \
     --optimize \
-    --no-dev
+    --no-dev \
+    --no-scripts
 
 
-# ------------------------------------------------------------
-# STAGE 2 : Image PHP + Apache
-# ------------------------------------------------------------
+# ============================================================
+# STAGE 2 : PHP + Apache
+# ============================================================
+
 FROM php:8.3-apache-bookworm
 
 WORKDIR /var/www/html
 
-# ------------------------------------------------------------
+
+# ============================================================
 # Dépendances système
-# ------------------------------------------------------------
+# ============================================================
+
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libicu-dev \
@@ -50,21 +57,14 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libzip-dev \
     unzip \
-    git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# ------------------------------------------------------------
-# Extensions PHP nécessaires à Laravel / MobiTrace
-#
-# gd          -> génération de PDF / images
-# pdo_pgsql   -> PostgreSQL
-# intl        -> internationalisation / Carbon
-# mbstring    -> Laravel
-# bcmath      -> calculs précis
-# zip         -> gestion des archives
-# opcache     -> performances PHP
-# ------------------------------------------------------------
+
+# ============================================================
+# Extensions PHP
+# ============================================================
+
 RUN docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
@@ -79,23 +79,19 @@ RUN docker-php-ext-configure gd \
         opcache
 
 
-# ------------------------------------------------------------
+# ============================================================
 # Apache
-# ------------------------------------------------------------
+# ============================================================
 
-# Activer les URLs propres de Laravel
 RUN a2enmod rewrite
 
-# Laravel doit être servi depuis /public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
 RUN sed -ri \
     -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/000-default.conf \
-    /etc/apache2/apache2.conf \
-    /etc/apache2/sites-available/default-ssl.conf
+    /etc/apache2/apache2.conf
 
-# Autoriser le .htaccess de Laravel
 RUN printf '%s\n' \
     '<Directory /var/www/html/public>' \
     '    AllowOverride All' \
@@ -105,21 +101,17 @@ RUN printf '%s\n' \
     && a2enconf laravel
 
 
-# ------------------------------------------------------------
-# Copier l'application depuis le stage Composer
-# ------------------------------------------------------------
+# ============================================================
+# Copier l'application
+# ============================================================
+
 COPY --from=composer-build /app /var/www/html
 
 
-# ------------------------------------------------------------
+# ============================================================
 # Préparer les dossiers Laravel
-#
-# storage/app/mpdf
-# storage/app/exports
-#
-# peuvent être utilisés par TCPDF pour les fichiers temporaires
-# ou les exports PDF.
-# ------------------------------------------------------------
+# ============================================================
+
 RUN mkdir -p \
     storage/app/mpdf \
     storage/app/exports \
@@ -130,9 +122,10 @@ RUN mkdir -p \
     bootstrap/cache
 
 
-# ------------------------------------------------------------
-# Permissions Laravel
-# ------------------------------------------------------------
+# ============================================================
+# Permissions
+# ============================================================
+
 RUN chown -R www-data:www-data \
         storage \
         bootstrap/cache \
@@ -141,9 +134,10 @@ RUN chown -R www-data:www-data \
         bootstrap/cache
 
 
-# ------------------------------------------------------------
-# Configuration PHP production
-# ------------------------------------------------------------
+# ============================================================
+# Configuration PHP
+# ============================================================
+
 RUN { \
         echo "memory_limit=256M"; \
         echo "upload_max_filesize=10M"; \
@@ -160,26 +154,17 @@ RUN { \
     } > /usr/local/etc/php/conf.d/production.ini
 
 
-# ------------------------------------------------------------
-# Entrypoint
-#
-# Les caches Laravel sont générés au démarrage du conteneur,
-# après injection des variables d'environnement de production.
-# ------------------------------------------------------------
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-
-# ------------------------------------------------------------
+# ============================================================
 # Port HTTP
-# ------------------------------------------------------------
+# ============================================================
+
 EXPOSE 80
 
 
-# ------------------------------------------------------------
+# ============================================================
 # Healthcheck
-# ------------------------------------------------------------
+# ============================================================
+
 HEALTHCHECK \
     --interval=30s \
     --timeout=5s \
@@ -188,9 +173,17 @@ HEALTHCHECK \
     CMD curl -f http://localhost/ || exit 1
 
 
-# ------------------------------------------------------------
-# Démarrage
-# ------------------------------------------------------------
-ENTRYPOINT ["docker-entrypoint.sh"]
+# ============================================================
+# Démarrage Laravel
+# ============================================================
 
-CMD ["apache2-foreground"]
+CMD ["sh", "-c", "\
+    php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan migrate --force && \
+    php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    exec apache2-foreground \
+"]
