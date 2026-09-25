@@ -9,4 +9,5 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::get('/clients/{client}', [ClientController::class, 'show']);
     Route::get('/clients/{client}/transactions', [ClientController::class, 'transactions']);
     Route::patch('/clients/{client}', [ClientController::class, 'update']);
+    Route::post('/clients/scan-cnib', [ClientController::class, 'scanCnib']);
 });

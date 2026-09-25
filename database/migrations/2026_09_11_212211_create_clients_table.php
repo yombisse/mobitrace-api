@@ -18,7 +18,10 @@ return new class extends Migration
             $table->string('nationalite', 100)->nullable();
             $table->string('type_piece', 50)->nullable();
             $table->string('numero_piece', 50)->nullable();
+            $table->date('date_delivrance_piece')->nullable();
             $table->date('date_expiration_piece')->nullable();
+            $table->string('cni_recto')->nullable();
+            $table->string('cni_verso')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

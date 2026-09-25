@@ -26,6 +26,9 @@ class TransactionResource extends ApiResource
                 'telephone' => $this->client->telephone,
                 'nom' => $this->client->nom,
                 'prenoms' => $this->client->prenoms,
+                'numero_piece' => $this->client->numero_piece,
+                'date_delivrance_piece' => $this->client->date_delivrance_piece?->toDateString(),
+                'date_expiration_piece' => $this->client->date_expiration_piece?->toDateString(),
             ]),
             'reseau' => $this->whenLoaded('reseau', fn () => [
                 'id' => $this->reseau->id,

@@ -8,7 +8,7 @@ class StoreReseauRequest extends ApiRequest
     {
         return [
             'nom' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:50', 'unique:reseaux,code'],
+            'code' => ['sometimes', 'nullable', 'string', 'max:50', 'unique:reseaux,code'],
             'logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ];
     }

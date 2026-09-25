@@ -28,7 +28,7 @@ class ReleveTransactionsPdfService
             }
 
             // Créer l'instance TCPDF
-            $pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
+            $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
 
             // Configuration de base
             $pdf->SetCreator('MobiTrace');
@@ -36,8 +36,8 @@ class ReleveTransactionsPdfService
             $pdf->SetTitle('Relevé de Transactions');
             $pdf->SetSubject('Export Transactions');
             $pdf->SetKeywords('MobiTrace, Transactions, Export');
-            $pdf->SetMargins(10, 10, 10);
-            $pdf->SetAutoPageBreak(true, 15);
+            $pdf->SetMargins(12, 12, 12);
+            $pdf->SetAutoPageBreak(true, 20);
             $pdf->SetFont('dejavusans', '', 10);
 
             // Configurer le dossier temporaire pour TCPDF
@@ -48,7 +48,7 @@ class ReleveTransactionsPdfService
             // Ajouter la première page
             $pdf->AddPage();
 
-            // Écrire l'en-tête
+            // Écrire l'en-tête avec CSS background-color (plus simple que TCPDF RoundedRect)
             $headerHtml = view('exports.releve-entete', [
                 'agent' => $user,
                 'debut' => \Carbon\Carbon::parse($filters['debut']),
@@ -62,7 +62,7 @@ class ReleveTransactionsPdfService
             $query = Transaction::query()
                 ->where('user_id', $user->id)
                 ->select('*')
-                ->with(['client:id,telephone,nom,prenoms', 'reseau:id,code,nom'])
+                ->with(['client:id,telephone,nom,prenoms,numero_piece,date_delivrance_piece,date_expiration_piece,photo', 'reseau:id,code,nom'])
                 ->where('created_at', '>=', $filters['debut'])
                 ->where('created_at', '<=', $filters['fin'].' 23:59:59')
                 ->orderBy('created_at', 'asc');
@@ -100,25 +100,34 @@ class ReleveTransactionsPdfService
                 throw new \Exception('Aucune transaction trouvée pour cette période.');
             }
 
-            // Calculer le total des montants
+            // Utiliser une taille de police fixe raisonnable pour le corps du tableau
+            $optimalFontSize = 7.5;
+            $pdf->SetFont('dejavusans', '', $optimalFontSize);
+
+            // Calculer les totaux
             $totalMontant = (clone $query)->sum('montant');
+            $totalDepots = (clone $query)->where('type_operation', 'depot')->sum('montant');
+            $totalRetraits = (clone $query)->where('type_operation', 'retrait')->sum('montant');
+            $soldeNet = $totalDepots - $totalRetraits;
             $hasSoldeApresOperation = (clone $query)->whereNotNull('solde_apres_operation')->exists();
 
-            // Générer par lots
-            $query->chunk(self::CHUNK_SIZE, function ($transactions) use ($pdf, $hasSoldeApresOperation) {
-                $rowsHtml = view('exports.releve-lignes', [
-                    'transactions' => $transactions,
-                    'hasSoldeApresOperation' => $hasSoldeApresOperation,
-                ])->render();
-                $pdf->writeHTML($rowsHtml, true, false, true, false, '');
-            });
-
-            // Écrire le total à la fin
+            // Écrire les totaux AVANT le tableau
             $totalHtml = view('exports.releve-total', [
                 'totalMontant' => $totalMontant,
+                'totalDepots' => $totalDepots,
+                'totalRetraits' => $totalRetraits,
+                'soldeNet' => $soldeNet,
                 'count' => $totalCount,
             ])->render();
             $pdf->writeHTML($totalHtml, true, false, true, false, '');
+
+            // Générer tout le tableau en une seule fois pour éviter la répétition des en-têtes
+            $allTransactions = $query->get();
+            $rowsHtml = view('exports.releve-lignes', [
+                'transactions' => $allTransactions,
+                'hasSoldeApresOperation' => $hasSoldeApresOperation,
+            ])->render();
+            $pdf->writeHTML($rowsHtml, false, false, true, false, '');
 
             // Générer le nom de fichier
             $filename = 'releve-transactions_'.$filters['debut'].'_'.$filters['fin'].'.pdf';

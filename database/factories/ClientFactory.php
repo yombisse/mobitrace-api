@@ -15,6 +15,9 @@ class ClientFactory extends Factory
 
     public function definition(): array
     {
+        $dateExpiration = fake()->dateTimeBetween('+1 year', '+5 years');
+        $dateDelivrance = (clone $dateExpiration)->modify('-10 years');
+
         return [
             'user_id' => User::factory(),
             'telephone' => fake()->unique()->numerify('########'),
@@ -24,7 +27,9 @@ class ClientFactory extends Factory
             'nationalite' => 'Burkinabè',
             'type_piece' => 'CNIB',
             'numero_piece' => fake()->unique()->bothify('########'),
-            'date_expiration_piece' => fake()->dateTimeBetween('+1 year', '+5 years')->format('Y-m-d'),
+            'date_delivrance_piece' => $dateDelivrance->format('Y-m-d'),
+            'date_expiration_piece' => $dateExpiration->format('Y-m-d'),
+            'cni_recto' => fake()->imageUrl(200, 200, 'people'),
         ];
     }
 }

@@ -19,7 +19,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'nationalite',
     'type_piece',
     'numero_piece',
+    'date_delivrance_piece',
     'date_expiration_piece',
+    'cni_recto',
+    'cni_verso',
 ])]
 class Client extends Model
 {
@@ -31,6 +34,7 @@ class Client extends Model
     {
         return [
             'date_naissance' => 'date',
+            'date_delivrance_piece' => 'date',
             'date_expiration_piece' => 'date',
             'deleted_at' => 'datetime',
         ];

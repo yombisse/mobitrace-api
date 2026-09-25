@@ -8,6 +8,7 @@ class UpdateReseauRequest extends ApiRequest
     {
         return [
             'nom' => ['sometimes', 'string', 'max:100'],
+            'code' => ['sometimes', 'nullable', 'string', 'max:50', 'unique:reseaux,code,'.$this->route('reseau')],
             'logo' => ['sometimes', 'nullable', 'string', 'max:2048'],
         ];
     }
