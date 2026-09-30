@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\ApiException;
+use App\Models\AgentReseau;
 use App\Models\Client;
 use App\Models\Reseau;
 use App\Models\Transaction;
@@ -13,7 +14,10 @@ use Illuminate\Support\Facades\DB;
 
 class TransactionService
 {
-    public function __construct(private readonly ReferenceGeneratorService $referenceGenerator) {}
+    public function __construct(
+        private readonly ReferenceGeneratorService $referenceGenerator,
+        private readonly CaisseService $caisseService
+    ) {}
 
     /**
      * @return array{transaction: Transaction, client: Client, client_existant: bool}
@@ -27,6 +31,15 @@ class TransactionService
             }
 
             $reseau = Reseau::query()->findOrFail($data['reseau_id']);
+            
+            // Vérifier la session de caisse ouverte
+            $agentReseau = $this->caisseService->getOrCreateAgentReseau($user, $data['reseau_id']);
+            $session = $this->caisseService->sessionOuverteDuJour($agentReseau);
+            
+            if ($session === null) {
+                throw new ApiException('Aucune session de caisse ouverte pour ce réseau aujourd\'hui.', 422);
+            }
+
             $client = Client::withTrashed()
                 ->where('user_id', $user->getKey())
                 ->where('telephone', $data['telephone'])
@@ -54,10 +67,10 @@ class TransactionService
             $transaction = $client->transactions()->create([
                 'user_id' => $user->getKey(),
                 'reseau_id' => $reseau->getKey(),
+                'caisse_session_id' => $session->id,
                 'type_operation' => $data['type_operation'],
                 'montant' => $data['montant'],
                 'reference' => $this->referenceGenerator->generate($reseau),
-                'solde_apres_operation' => $data['solde_apres_operation'] ?? null,
                 'note' => $data['note'] ?? null,
                 'statut' => 'ENREGISTREE',
                 'version' => 1,
@@ -65,6 +78,13 @@ class TransactionService
                 'consentement_methode' => 'confirmation_client',
                 'consentement_confirme_le' => now(),
             ]);
+
+            // Appliquer l'effet de la transaction sur le solde
+            $this->caisseService->appliquerEffetTransaction($transaction, 1);
+
+            // Calculer solde_apres_operation après application du mouvement
+            $transaction->solde_apres_operation = $agentReseau->fresh()->solde_float;
+            $transaction->save();
 
             $this->recordHistory(
                 $transaction,
@@ -242,9 +262,22 @@ class TransactionService
             unset($data['motif']);
             $oldData = $this->snapshot($transaction, array_keys($data));
 
+            // Rejouer l'inverse de l'ancien montant
+            $this->caisseService->appliquerEffetTransaction($transaction, -1);
+
             $transaction->fill($data);
             $transaction->statut = 'MODIFIEE';
             $transaction->version++;
+            $transaction->save();
+
+            // Appliquer le nouveau montant
+            $this->caisseService->appliquerEffetTransaction($transaction, 1);
+
+            // Recalculer solde_apres_operation
+            $agentReseau = AgentReseau::where('user_id', $transaction->user_id)
+                ->where('reseau_id', $transaction->reseau_id)
+                ->first();
+            $transaction->solde_apres_operation = $agentReseau->solde_float;
             $transaction->save();
 
             $this->recordHistory(
@@ -266,6 +299,9 @@ class TransactionService
             $transaction = $this->findOwned($user, $transaction);
             $this->ensureEditable($transaction);
             $oldData = $this->snapshot($transaction, ['statut', 'version']);
+
+            // Rejouer l'inverse du montant annulé
+            $this->caisseService->appliquerEffetTransaction($transaction, -1);
 
             $transaction->statut = 'ANNULEE';
             $transaction->version++;
