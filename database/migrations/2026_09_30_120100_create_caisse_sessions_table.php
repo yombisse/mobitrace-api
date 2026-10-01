@@ -32,6 +32,8 @@ return new class extends Migration
             $table->timestamp('ouverte_at')->useCurrent();
             $table->timestamp('cloturee_at')->nullable();
 
+            $table->timestamps();
+
             $table->unique(['agent_reseau_id', 'date']);
             $table->index('agent_reseau_id');
             $table->index('date');

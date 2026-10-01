@@ -101,7 +101,7 @@ class CaisseSessionController extends Controller
             $session,
             $data['solde_float_reel'],
             $data['solde_cash_reel'],
-            $data['justification']
+            $data['justification'] ?? null
         );
 
         return ApiResponse::success([

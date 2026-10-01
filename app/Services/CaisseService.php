@@ -52,6 +52,11 @@ class CaisseService
             ]);
         }
 
+        // Mettre à jour les soldes de l'agent_reseau avec les soldes d'ouverture
+        $agentReseau->solde_float = $soldeFloatOuverture;
+        $agentReseau->solde_cash = $soldeCashOuverture;
+        $agentReseau->save();
+
         return CaisseSession::create([
             'agent_reseau_id' => $agentReseau->id,
             'date' => today(),

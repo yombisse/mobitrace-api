@@ -30,6 +30,8 @@ class CaisseSession extends Model
 
     protected $table = 'caisse_sessions';
 
+    public $timestamps = true;
+
     protected function casts(): array
     {
         return [
