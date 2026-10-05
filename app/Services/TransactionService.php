@@ -34,10 +34,10 @@ class TransactionService
             
             // Vérifier la session de caisse ouverte
             $agentReseau = $this->caisseService->getOrCreateAgentReseau($user, $data['reseau_id']);
-            $session = $this->caisseService->sessionOuverteDuJour($agentReseau);
+            $session = $this->caisseService->sessionOuverte($agentReseau);
             
             if ($session === null) {
-                throw new ApiException('Aucune session de caisse ouverte pour ce réseau aujourd\'hui.', 422);
+                throw new ApiException('Aucune session de caisse ouverte pour ce réseau.', 422);
             }
 
             $client = Client::withTrashed()

@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('caisse_sessions', function (Blueprint $table) {
-            $table->timestamps();
+            $table->dropUnique(['agent_reseau_id', 'date']);
         });
     }
 
     public function down(): void
     {
         Schema::table('caisse_sessions', function (Blueprint $table) {
-            $table->dropTimestamps();
+            $table->unique(['agent_reseau_id', 'date']);
         });
     }
 };

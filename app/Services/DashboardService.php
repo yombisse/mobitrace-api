@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 class DashboardService
 {
     /**
-     * @return array{date: string, nombre_transactions: int, total_depots: string, total_retraits: string, dernieres_transactions: Collection, derniers_soldes: array<int, array{reseau: array{id: string, nom: string, code: string}, solde_float: string, solde_cash: string, session_aujourdhui: array{statut: string, session_id: string|null}}>}
+     * @return array{date: string, nombre_transactions: int, total_depots: string, total_retraits: string, dernieres_transactions: Collection, derniers_soldes: array<int, array{reseau: array{id: string, nom: string, code: string}, solde_float: string, solde_cash: string, session_ouverte: array{statut: string, session_id: string|null, ouverte_depuis_plusieurs_jours: boolean}}>}
      */
     public function summary(User $user): array
     {
@@ -48,7 +48,7 @@ class DashboardService
     }
 
     /**
-     * @return array<int, array{reseau: array{id: string, nom: string, code: string}, solde_float: string, solde_cash: string, session_aujourdhui: array{statut: string, session_id: string|null}}>
+     * @return array<int, array{reseau: array{id: string, nom: string, code: string}, solde_float: string, solde_cash: string, session_ouverte: array{statut: string, session_id: string|null, ouverte_depuis_plusieurs_jours: boolean}}>}
      */
     private function latestBalances(User $user): array
     {
@@ -58,8 +58,13 @@ class DashboardService
             ->get()
             ->map(function (AgentReseau $agentReseau) {
                 $session = CaisseSession::where('agent_reseau_id', $agentReseau->id)
-                    ->where('date', today())
+                    ->where('statut', 'ouverte')
                     ->first();
+
+                $ouverteDepuisPlusieursJours = false;
+                if ($session !== null) {
+                    $ouverteDepuisPlusieursJours = $session->ouverte_at->toDateString() < today()->toDateString();
+                }
 
                 return [
                     'reseau' => [
@@ -69,12 +74,14 @@ class DashboardService
                     ],
                     'solde_float' => $this->money($agentReseau->solde_float),
                     'solde_cash' => $this->money($agentReseau->solde_cash),
-                    'session_aujourdhui' => $session === null ? [
+                    'session_ouverte' => $session === null ? [
                         'statut' => 'inexistante',
                         'session_id' => null,
+                        'ouverte_depuis_plusieurs_jours' => false,
                     ] : [
                         'statut' => $session->statut,
                         'session_id' => $session->id,
+                        'ouverte_depuis_plusieurs_jours' => $ouverteDepuisPlusieursJours,
                     ],
                 ];
             })

@@ -1,25 +1,34 @@
-<div style="background-color: #1F9D55; padding: 12px 25px 10px 25px; margin-bottom: 15px; border-radius: 8px;">
-    <div style="color: #FFFFFF; margin-bottom: 8px;">
-        <div style="font-size: 14pt; font-weight: bold;">MobiTrace</div>
-        <div style="font-size: 7.5pt; font-weight: normal;">Export des transactions — Journal d'audit</div>
+<!-- BANDEAU D'EN-TÊTE -->
+<div style="background-color: #e8f5e9; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #0d4a2e; text-align: center;">
+    <div style="color: #333;">
+        <div style="font-size: 18pt; font-weight: bold; margin-bottom: 1px; color: #0d4a2e;">MobiTrace</div>
+        <div style="font-size: 9pt; color: #666; margin-bottom: 6px;">Votre registre numérique</div>
+        <div style="font-size: 14pt; font-weight: bold; margin-bottom: 2px; color: #333;">Relevé de transactions</div>
+        <div style="font-size: 9pt; color: #666;">Journal d'audit</div>
     </div>
+</div>
+
+<!-- BANDEAU INFOS (grille 2x2) -->
+<div style="background-color: #ffffff; padding: 8px 20px; margin-bottom: 15px;">
     <table border="0" cellpadding="0" cellspacing="0" style="width: 100%;">
         <tr>
-            <td style="width: 25%; color: #FFFFFF; padding-right: 10px;">
-                <div style="font-size: 6.5pt; color: #E8F5E9; font-weight: normal;">AGENT</div>
-                <div style="font-size: 9pt; font-weight: bold;">{{ $agent->name }} ({{ $agent->code_agent ?? 'N/A' }})</div>
+            <td style="width: 50%; padding: 5px 15px 5px 0; border-right: 1px solid #e0e0e0;">
+                <div style="font-size: 7pt; color: #666; margin-bottom: 2px;">Agent</div>
+                <div style="font-size: 9pt; font-weight: bold; color: #000;">{{ $agent->name }} ({{ $agent->code_agent ?? 'N/A' }})</div>
             </td>
-            <td style="width: 25%; color: #FFFFFF; padding-right: 10px;">
-                <div style="font-size: 6.5pt; color: #E8F5E9; font-weight: normal;">PÉRIODE EXPORTÉE</div>
-                <div style="font-size: 9pt; font-weight: bold;">{{ $debut->format('d/m/Y') }} - {{ $fin->format('d/m/Y') }}</div>
+            <td style="width: 50%; padding: 5px 0 5px 15px;">
+                <div style="font-size: 7pt; color: #666; margin-bottom: 2px;">Période exportée</div>
+                <div style="font-size: 9pt; font-weight: bold; color: #000;">{{ $debut->format('d/m/Y') }} - {{ $fin->format('d/m/Y') }}</div>
             </td>
-            <td style="width: 25%; color: #FFFFFF; padding-right: 10px;">
-                <div style="font-size: 6.5pt; color: #E8F5E9; font-weight: normal;">RÉSEAU</div>
-                <div style="font-size: 9pt; font-weight: bold;">{{ $reseau ?? 'Tous' }}</div>
+        </tr>
+        <tr>
+            <td style="width: 50%; padding: 5px 15px 5px 0; border-right: 1px solid #e0e0e0;">
+                <div style="font-size: 7pt; color: #666; margin-bottom: 2px;">Réseau</div>
+                <div style="font-size: 9pt; font-weight: bold; color: #000;">{{ $reseau ?? 'Tous' }}</div>
             </td>
-            <td style="width: 25%; color: #FFFFFF;">
-                <div style="font-size: 6.5pt; color: #E8F5E9; font-weight: normal;">GÉNÉRÉ LE</div>
-                <div style="font-size: 9pt; font-weight: bold;">{{ $generatedAt->format('d/m/Y H:i') }}</div>
+            <td style="width: 50%; padding: 5px 0 5px 15px;">
+                <div style="font-size: 7pt; color: #666; margin-bottom: 2px;">Généré le</div>
+                <div style="font-size: 9pt; font-weight: bold; color: #000;">{{ $generatedAt->format('d/m/Y H:i') }}</div>
             </td>
         </tr>
     </table>

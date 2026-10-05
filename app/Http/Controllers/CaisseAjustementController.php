@@ -26,8 +26,8 @@ class CaisseAjustementController extends Controller
         $ajustement = $this->caisseService->ajusterCaisse(
             $agentReseau,
             $data['type'],
-            $data['montant_float'],
-            $data['montant_cash'],
+            $data['montant_float'] ?? 0,
+            $data['montant_cash'] ?? 0,
             $data['motif']
         );
 
@@ -38,6 +38,7 @@ class CaisseAjustementController extends Controller
             'montant_cash' => $ajustement->montant_cash,
             'motif' => $ajustement->motif,
             'created_at' => $ajustement->created_at,
+            'updated_at' => $ajustement->updated_at,
         ], 'Ajustement de caisse effectué avec succès.', 201);
     }
 }

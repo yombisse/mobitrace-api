@@ -32,10 +32,9 @@ class CaisseService
         });
     }
 
-    public function sessionOuverteDuJour(AgentReseau $agentReseau): ?CaisseSession
+    public function sessionOuverte(AgentReseau $agentReseau): ?CaisseSession
     {
         return CaisseSession::where('agent_reseau_id', $agentReseau->id)
-            ->where('date', today())
             ->where('statut', 'ouverte')
             ->first();
     }
@@ -43,12 +42,12 @@ class CaisseService
     public function ouvrirSession(AgentReseau $agentReseau, float $soldeFloatOuverture, float $soldeCashOuverture): CaisseSession
     {
         $existingSession = CaisseSession::where('agent_reseau_id', $agentReseau->id)
-            ->where('date', today())
+            ->where('statut', 'ouverte')
             ->first();
 
         if ($existingSession !== null) {
             throw ValidationException::withMessages([
-                'date' => ['Une session existe déjà pour ce réseau aujourd\'hui.'],
+                'statut' => ['Une session est déjà ouverte pour ce réseau, veuillez la clôturer avant d\'en ouvrir une nouvelle.'],
             ]);
         }
 
@@ -57,13 +56,23 @@ class CaisseService
         $agentReseau->solde_cash = $soldeCashOuverture;
         $agentReseau->save();
 
-        return CaisseSession::create([
+        $session = CaisseSession::create([
             'agent_reseau_id' => $agentReseau->id,
             'date' => today(),
             'solde_float_ouverture' => $soldeFloatOuverture,
             'solde_cash_ouverture' => $soldeCashOuverture,
             'statut' => 'ouverte',
         ]);
+
+        // Lier rétroactivement les transactions du jour sans session à cette nouvelle session
+        // (transactions créées avant l'ouverture de session pour cet agent/reseau le même jour)
+        Transaction::where('user_id', $agentReseau->user_id)
+            ->where('reseau_id', $agentReseau->reseau_id)
+            ->whereDate('created_at', today())
+            ->whereNull('caisse_session_id')
+            ->update(['caisse_session_id' => $session->id]);
+
+        return $session;
     }
 
     public function cloturerSession(CaisseSession $session, float $soldeFloatReel, float $soldeCashReel, ?string $justification): CaisseSession
@@ -103,6 +112,32 @@ class CaisseService
 
     public function ajusterCaisse(AgentReseau $agentReseau, string $type, float $montantFloat, float $montantCash, string $motif): AjustementCaisse
     {
+        // Vérifier qu'une session est ouverte pour cet agent_reseau
+        $sessionOuverte = $this->sessionOuverte($agentReseau);
+        if ($sessionOuverte === null) {
+            throw new ApiException('Aucune session de caisse ouverte pour ce réseau. Veuillez ouvrir une session avant d\'ajuster les soldes.', 422);
+        }
+
+        // Vérifier que le solde final ne sera pas négatif
+        $nouveauSoldeFloat = $agentReseau->solde_float + $montantFloat;
+        if ($nouveauSoldeFloat < 0) {
+            throw new ApiException('Le solde float ne peut pas être négatif après ajustement. Solde actuel : ' . number_format($agentReseau->solde_float, 0, ',', ' ') . ' FCFA.', 422);
+        }
+
+        $nouveauSoldeCash = $agentReseau->solde_cash + $montantCash;
+        if ($nouveauSoldeCash < 0) {
+            throw new ApiException('Le solde cash ne peut pas être négatif après ajustement. Solde actuel : ' . number_format($agentReseau->solde_cash, 0, ',', ' ') . ' FCFA.', 422);
+        }
+
+        // Vérifier que le montant n'excède pas la capacité de la base de données (999,999,999,999,999.99)
+        $montantMax = 999999999999999.99;
+        if (abs($montantFloat) > $montantMax) {
+            throw new ApiException('Le montant float est trop élevé. Maximum autorisé : ' . number_format($montantMax, 0, ',', ' ') . ' FCFA.', 422);
+        }
+        if (abs($montantCash) > $montantMax) {
+            throw new ApiException('Le montant cash est trop élevé. Maximum autorisé : ' . number_format($montantMax, 0, ',', ' ') . ' FCFA.', 422);
+        }
+
         $ajustement = AjustementCaisse::create([
             'agent_reseau_id' => $agentReseau->id,
             'type' => $type,
@@ -112,6 +147,11 @@ class CaisseService
         ]);
 
         $this->appliquerMouvement($agentReseau, $montantFloat, $montantCash);
+
+        // Mettre à jour le solde d'ouverture de la session pour refléter l'ajustement
+        $sessionOuverte->solde_float_ouverture = $nouveauSoldeFloat;
+        $sessionOuverte->solde_cash_ouverture = $nouveauSoldeCash;
+        $sessionOuverte->save();
 
         return $ajustement;
     }

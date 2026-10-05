@@ -27,6 +27,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {
     Route::patch('/mes-reseaux/{reseau}', [App\Http\Controllers\MesReseauxController::class, 'update']);
     Route::get('/caisse/solde', [App\Http\Controllers\CaisseSoldeController::class, 'index']);
     Route::get('/caisse/sessions/aujourdhui', [App\Http\Controllers\CaisseSessionController::class, 'aujourdhui']);
+    Route::get('/caisse/sessions/historique', [App\Http\Controllers\CaisseSessionController::class, 'historique']);
+    Route::get('/caisse/sessions/{session}/bilan', [App\Http\Controllers\CaisseSessionController::class, 'bilan']);
+    Route::get('/caisse/sessions/{session}/export-pdf', [App\Http\Controllers\CaisseSessionController::class, 'exportPdf']);
     Route::post('/caisse/sessions/ouvrir', [App\Http\Controllers\CaisseSessionController::class, 'ouvrir']);
     Route::post('/caisse/sessions/{session}/cloturer', [App\Http\Controllers\CaisseSessionController::class, 'cloturer']);
     Route::post('/caisse/ajustements', [App\Http\Controllers\CaisseAjustementController::class, 'store']);

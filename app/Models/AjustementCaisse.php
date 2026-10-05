@@ -21,6 +21,7 @@ class AjustementCaisse extends Model
             'montant_float' => 'decimal:2',
             'montant_cash' => 'decimal:2',
             'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
     }
 

@@ -60,6 +60,7 @@ class GeminiCnibService
                 'generationConfig' => [
                     'response_mime_type' => 'application/json',
                     'response_schema' => $this->buildJsonSchema(),
+                    'temperature' => 0.1,
                 ],
             ]);
 
@@ -84,6 +85,11 @@ class GeminiCnibService
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new ApiException('Impossible de parser la réponse JSON.', 502);
             }
+
+            // Log de la réponse JSON brute pour diagnostic
+            Log::info('Gemini raw response', [
+                'raw_json' => $extractedData,
+            ]);
 
             return $this->normalizeResponse($extractedData);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -133,15 +139,16 @@ PROMPT;
         return [
             'type' => 'object',
             'properties' => [
-                'nom' => ['type' => 'string'],
-                'prenoms' => ['type' => 'string'],
-                'date_naissance' => ['type' => 'string'],
-                'nationalite' => ['type' => 'string'],
-                'type_piece' => ['type' => 'string'],
-                'numero_piece' => ['type' => 'string'],
-                'date_delivrance_piece' => ['type' => 'string'],
-                'date_expiration_piece' => ['type' => 'string'],
+                'nom' => ['type' => 'string', 'nullable' => true],
+                'prenoms' => ['type' => 'string', 'nullable' => true],
+                'date_naissance' => ['type' => 'string', 'nullable' => true],
+                'nationalite' => ['type' => 'string', 'nullable' => true],
+                'type_piece' => ['type' => 'string', 'nullable' => true],
+                'numero_piece' => ['type' => 'string', 'nullable' => true],
+                'date_delivrance_piece' => ['type' => 'string', 'nullable' => true],
+                'date_expiration_piece' => ['type' => 'string', 'nullable' => true],
             ],
+            'required' => [],
         ];
     }
 
