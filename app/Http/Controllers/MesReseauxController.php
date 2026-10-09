@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Caisse\ToggleReseauRequest;
 use App\Models\AgentReseau;
+use App\Models\CaisseSession;
 use App\Models\Reseau;
 use App\Models\User;
 use App\Support\ApiResponse;
@@ -31,7 +32,25 @@ class MesReseauxController extends Controller
             ])
             ->orderBy('reseaux.nom')
             ->get()
-            ->map(function ($reseau) {
+            ->map(function ($reseau) use ($user) {
+                $soldeFloatSuggere = null;
+                $soldeCashSuggere = null;
+
+                // Chercher la dernière session clôturée pour suggérer ses soldes réels
+                if ($reseau->actif ?? false) {
+                    $derniereSession = CaisseSession::whereHas('agentReseau', function ($query) use ($user, $reseau) {
+                        $query->where('user_id', $user->id)->where('reseau_id', $reseau->id);
+                    })
+                    ->where('statut', 'cloturee')
+                    ->orderBy('cloturee_at', 'desc')
+                    ->first();
+
+                    if ($derniereSession !== null && $derniereSession->solde_float_reel !== null) {
+                        $soldeFloatSuggere = $derniereSession->solde_float_reel;
+                        $soldeCashSuggere = $derniereSession->solde_cash_reel;
+                    }
+                }
+
                 return [
                     'id' => $reseau->id,
                     'nom' => $reseau->nom,
@@ -40,6 +59,8 @@ class MesReseauxController extends Controller
                     'actif' => $reseau->actif ?? false,
                     'solde_float' => $reseau->solde_float ?? 0,
                     'solde_cash' => $reseau->solde_cash ?? 0,
+                    'solde_float_suggere' => $soldeFloatSuggere,
+                    'solde_cash_suggere' => $soldeCashSuggere,
                 ];
             });
 

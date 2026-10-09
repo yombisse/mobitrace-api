@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Exceptions\ApiException;
 use App\Models\AgentReseau;
+use App\Models\CaisseSession;
 use App\Models\Client;
 use App\Models\Reseau;
 use App\Models\Transaction;
@@ -214,9 +215,15 @@ class TransactionService
         $count = $query->count();
         $total = $query->sum('montant');
 
+        // Calculer les totaux séparés par type d'opération
+        $totalDepots = (clone $query)->where('type_operation', 'depot')->sum('montant');
+        $totalRetraits = (clone $query)->where('type_operation', 'retrait')->sum('montant');
+
         return [
             'count' => $count,
             'total' => $total,
+            'total_depots' => $totalDepots,
+            'total_retraits' => $totalRetraits,
         ];
     }
 
@@ -258,6 +265,15 @@ class TransactionService
         return DB::transaction(function () use ($user, $transaction, $data): Transaction {
             $transaction = $this->findOwned($user, $transaction);
             $this->ensureEditable($transaction);
+
+            // Vérifier si la session est clôturée
+            if ($transaction->caisse_session_id !== null) {
+                $session = CaisseSession::find($transaction->caisse_session_id);
+                if ($session !== null && $session->statut === 'cloturee') {
+                    throw new ApiException('Session clôturée : utilisez un ajustement de correction.', 422);
+                }
+            }
+
             $motif = $data['motif'];
             unset($data['motif']);
             $oldData = $this->snapshot($transaction, array_keys($data));
@@ -298,6 +314,15 @@ class TransactionService
         return DB::transaction(function () use ($user, $transaction, $motif): Transaction {
             $transaction = $this->findOwned($user, $transaction);
             $this->ensureEditable($transaction);
+
+            // Vérifier si la session est clôturée
+            if ($transaction->caisse_session_id !== null) {
+                $session = CaisseSession::find($transaction->caisse_session_id);
+                if ($session !== null && $session->statut === 'cloturee') {
+                    throw new ApiException('Session clôturée : utilisez un ajustement de correction.', 422);
+                }
+            }
+
             $oldData = $this->snapshot($transaction, ['statut', 'version']);
 
             // Rejouer l'inverse du montant annulé

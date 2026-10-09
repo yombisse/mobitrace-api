@@ -74,17 +74,24 @@ class CaisseSessionController extends Controller
         $session = $this->caisseService->ouvrirSession(
             $agentReseau,
             $data['solde_float_ouverture'],
-            $data['solde_cash_ouverture']
+            $data['solde_cash_ouverture'],
+            $data['justification'] ?? null
         );
 
-        return ApiResponse::success([
+        $response = [
             'id' => $session->id,
             'date' => $session->date,
             'solde_float_ouverture' => $session->solde_float_ouverture,
             'solde_cash_ouverture' => $session->solde_cash_ouverture,
             'statut' => $session->statut,
             'ouverte_at' => $session->ouverte_at,
-        ], 'Session de caisse ouverte avec succès.', 201);
+        ];
+
+        if (isset($session->meta)) {
+            $response['meta'] = $session->meta;
+        }
+
+        return ApiResponse::success($response, 'Session de caisse ouverte avec succès.', 201);
     }
 
     public function cloturer(CloturerSessionRequest $request, string $sessionId): JsonResponse
@@ -233,6 +240,15 @@ class CaisseSessionController extends Controller
         $totalAjustementsFloat = $ajustements->sum('montant_float');
         $totalAjustementsCash = $ajustements->sum('montant_cash');
 
+        // Calculer le solde théorique dynamiquement si session ouverte
+        $soldeFloatTheorique = $session->solde_float_theorique;
+        $soldeCashTheorique = $session->solde_cash_theorique;
+        if ($session->statut === 'ouverte') {
+            $soldesTheoriques = $this->caisseService->calculerSoldesTheoriques($session);
+            $soldeFloatTheorique = $soldesTheoriques['solde_float_theorique'];
+            $soldeCashTheorique = $soldesTheoriques['solde_cash_theorique'];
+        }
+
         return ApiResponse::success([
             'session' => [
                 'id' => $session->id,
@@ -244,8 +260,11 @@ class CaisseSessionController extends Controller
                 ],
                 'solde_float_ouverture' => $session->solde_float_ouverture,
                 'solde_cash_ouverture' => $session->solde_cash_ouverture,
-                'solde_float_theorique' => $session->solde_float_theorique,
-                'solde_cash_theorique' => $session->solde_cash_theorique,
+                'ecart_float_ouverture' => $session->ecart_float_ouverture,
+                'ecart_cash_ouverture' => $session->ecart_cash_ouverture,
+                'justification_ouverture' => $session->justification_ouverture,
+                'solde_float_theorique' => $soldeFloatTheorique,
+                'solde_cash_theorique' => $soldeCashTheorique,
                 'solde_float_reel' => $session->solde_float_reel,
                 'solde_cash_reel' => $session->solde_cash_reel,
                 'ecart_float' => $session->ecart_float,

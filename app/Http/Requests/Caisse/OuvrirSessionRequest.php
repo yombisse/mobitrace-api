@@ -13,6 +13,7 @@ class OuvrirSessionRequest extends ApiRequest
             'reseau_id' => ['required', 'uuid', Rule::exists('reseaux', 'id')],
             'solde_float_ouverture' => ['required', 'numeric', 'gte:0'],
             'solde_cash_ouverture' => ['required', 'numeric', 'gte:0'],
+            'justification' => ['nullable', 'string'],
         ];
     }
 }

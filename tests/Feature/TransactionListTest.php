@@ -526,6 +526,6 @@ class TransactionListTest extends TestCase
 
         $summary = $response->json('meta.summary');
         $this->assertEquals(2, $summary['count']); // Seulement 2 transactions non annulées
-        $this->assertEquals(25000.0, $summary['total']); // 10000 + 15000, pas 5000
+        $this->assertEquals(25000.0, $summary['total']); // 10000 + 15000
     }
 }

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'user_id',
     'client_id',
     'reseau_id',
+    'caisse_session_id',
     'type_operation',
     'montant',
     'reference',
@@ -31,6 +32,16 @@ class Transaction extends Model
     use HasFactory, UsesUuid;
 
     protected $table = 'transactions';
+
+    protected static function booted()
+    {
+        static::updating(function ($transaction) {
+            // Empêcher la modification de caisse_session_id après création
+            if ($transaction->isDirty('caisse_session_id')) {
+                throw new \Exception('caisse_session_id ne peut pas être modifié après création.');
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -56,6 +67,11 @@ class Transaction extends Model
     public function reseau(): BelongsTo
     {
         return $this->belongsTo(Reseau::class);
+    }
+
+    public function caisseSession(): BelongsTo
+    {
+        return $this->belongsTo(CaisseSession::class);
     }
 
     public function histories(): HasMany

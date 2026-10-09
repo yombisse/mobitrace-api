@@ -8,6 +8,19 @@ class TransactionResource extends ApiResource
 {
     public function toArray(Request $request): array
     {
+        // Déterminer si la transaction est modifiable
+        $modifiable = $this->statut !== 'ANNULEE';
+        
+        if ($modifiable && $this->caisse_session_id !== null) {
+            if ($this->relationLoaded('caisseSession') && $this->caisseSession) {
+                $modifiable = $this->caisseSession->statut !== 'cloturee';
+            } else {
+                // Si la session n'est pas chargée, vérifier en base
+                $session = \App\Models\CaisseSession::find($this->caisse_session_id);
+                $modifiable = $session === null || $session->statut !== 'cloturee';
+            }
+        }
+
         return [
             'id' => $this->id,
             'type_operation' => $this->type_operation,
@@ -18,6 +31,7 @@ class TransactionResource extends ApiResource
             'statut' => $this->statut,
             'version' => $this->version,
             'created_at' => $this->created_at,
+            'modifiable' => $modifiable,
             'consentement_recap' => $this->consentement_recap,
             'consentement_methode' => $this->consentement_methode,
             'consentement_confirme_le' => $this->consentement_confirme_le,
