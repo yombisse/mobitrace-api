@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ScanCnibRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Http\Resources\ClientResource;
 use App\Http\Resources\ClientTransactionResource;
 use App\Models\Client;
 use App\Services\ClientService;
-use App\Services\GeminiCnibService;
 use App\Support\ApiResponse;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +16,6 @@ class ClientController extends Controller
 {
     public function __construct(
         private readonly ClientService $clientService,
-        private readonly GeminiCnibService $geminiCnibService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -88,30 +85,5 @@ class ClientController extends Controller
         return ClientResource::make(
             $this->clientService->update($request->user(), $client, $request->validated()),
         );
-    }
-
-    public function scanCnib(ScanCnibRequest $request): JsonResponse
-    {
-        $recto = $request->file('recto');
-        $verso = $request->file('verso');
-
-        \Log::info('Scan CNIB Request', [
-            'recto' => $recto ? [
-                'original_name' => $recto->getClientOriginalName(),
-                'mime_type' => $recto->getMimeType(),
-                'size' => $recto->getSize(),
-                'extension' => $recto->getClientOriginalExtension(),
-            ] : null,
-            'verso' => $verso ? [
-                'original_name' => $verso->getClientOriginalName(),
-                'mime_type' => $verso->getMimeType(),
-                'size' => $verso->getSize(),
-                'extension' => $verso->getClientOriginalExtension(),
-            ] : null,
-        ]);
-
-        $extractedData = $this->geminiCnibService->scanCnib($recto, $verso);
-
-        return ApiResponse::success($extractedData, 'Analyse CNIB effectuée avec succès.');
     }
 }
