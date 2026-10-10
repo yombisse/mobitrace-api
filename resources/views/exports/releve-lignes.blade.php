@@ -1,20 +1,20 @@
 <table border="0" cellpadding="4" cellspacing="0" style="width: 100%; margin-top: 10px; border-collapse: collapse;">
     <thead>
         <tr>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 22mm;">DATE/HEURE</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 22mm;">RÉFÉRENCE</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 26mm;">N° CLIENT</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 30mm;">CLIENT</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 22mm;">N° CNIB</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 22mm;">DÉLIVRANCE</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 20mm;">EXPIRATION</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 22mm;">RÉSEAU</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 14mm;">TYPE</th>
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 19mm;">MONTANT</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 22mm;">DATE/HEURE</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 22mm;">RÉFÉRENCE</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 26mm;">N° CLIENT</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 30mm;">CLIENT</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 22mm;">N° CNIB</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 22mm;">DÉLIVRANCE</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 20mm;">EXPIRATION</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 22mm;">RÉSEAU</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 14mm;">TYPE</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 19mm;">MONTANT</th>
             @if($hasSoldeApresOperation)
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 21mm;">SOLDE APRÈS</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 21mm;">SOLDE APRÈS</th>
             @endif
-            <th style="background-color: #15803D; color: #FFFFFF; font-weight: bold; font-size: 7.3pt; padding: 8px 4px; border: 1px solid #15803D; width: 26mm;">CONSENTEMENT</th>
+            <th style="background-color: #0B3B2E; color: #FFFFFF; font-weight: bold; font-size: 7pt; padding: 7px 4px; border: 1px solid #0B3B2E; width: 26mm;">CONSENTEMENT</th>
         </tr>
     </thead>
     <tbody>

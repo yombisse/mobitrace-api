@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Reseau;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\SessionCaissePdfService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,6 +36,36 @@ class CaisseSessionTest extends TestCase
             'solde_float' => 0,
             'solde_cash' => 0,
         ]);
+    }
+
+    public function test_export_pdf_bilan_session_generates_document()
+    {
+        $session = CaisseSession::create([
+            'agent_reseau_id' => $this->agentReseau->id,
+            'date' => today(),
+            'solde_float_ouverture' => 100000,
+            'solde_cash_ouverture' => 80000,
+            'solde_float_theorique' => 100000,
+            'solde_cash_theorique' => 80000,
+            'solde_float_reel' => 100000,
+            'solde_cash_reel' => 80000,
+            'ecart_float' => 0,
+            'ecart_cash' => 0,
+            'statut' => 'cloturee',
+            'ouverte_at' => now()->subHour(),
+            'cloturee_at' => now(),
+        ]);
+
+        $filepath = app(SessionCaissePdfService::class)->generateBilanSession($this->user, $session->id);
+
+        try {
+            $this->assertFileExists($filepath);
+            $this->assertStringStartsWith('%PDF', file_get_contents($filepath));
+        } finally {
+            if (is_file($filepath)) {
+                unlink($filepath);
+            }
+        }
     }
 
     public function test_scenario_principal_sessions_et_transactions()
