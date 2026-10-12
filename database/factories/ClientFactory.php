@@ -29,7 +29,6 @@ class ClientFactory extends Factory
             'numero_piece' => fake()->unique()->bothify('########'),
             'date_delivrance_piece' => $dateDelivrance->format('Y-m-d'),
             'date_expiration_piece' => $dateExpiration->format('Y-m-d'),
-            'cni_recto' => fake()->imageUrl(200, 200, 'people'),
         ];
     }
 }

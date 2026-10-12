@@ -15,8 +15,6 @@ class UpdateClientRequest extends ApiRequest
             'numero_piece' => ['sometimes', 'nullable', 'string', 'max:50'],
             'date_delivrance_piece' => ['sometimes', 'nullable', 'date'],
             'date_expiration_piece' => ['sometimes', 'nullable', 'date'],
-            'cni_recto' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'cni_verso' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
 }

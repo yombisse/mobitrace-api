@@ -21,8 +21,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'numero_piece',
     'date_delivrance_piece',
     'date_expiration_piece',
-    'cni_recto',
-    'cni_verso',
 ])]
 class Client extends Model
 {

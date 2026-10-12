@@ -62,7 +62,7 @@ class ReleveTransactionsPdfService
             $query = Transaction::query()
                 ->where('user_id', $user->id)
                 ->select('*')
-                ->with(['client:id,telephone,nom,prenoms,numero_piece,date_delivrance_piece,date_expiration_piece,cni_recto', 'reseau:id,code,nom'])
+                ->with(['client:id,telephone,nom,prenoms,numero_piece,date_delivrance_piece,date_expiration_piece', 'reseau:id,code,nom'])
                 ->where('created_at', '>=', $filters['debut'])
                 ->where('created_at', '<=', $filters['fin'].' 23:59:59')
                 ->orderBy('created_at', 'asc');

@@ -738,9 +738,7 @@
   "client_confirme": true,
   "consentement_recap": "Dépôt de 10000 FCFA pour le 70123456 via Orange Money via l'application MobiTrace.",
   "consentement_methode": "confirmation_client",
-  "consentement_confirme_le": "2026-10-09T22:30:00.000000Z",
-  "cni_recto": "base64_encoded_image",
-  "cni_verso": "base64_encoded_image_ou_null"
+  "consentement_confirme_le": "2026-10-09T22:30:00.000000Z"
 }
 ```
 
@@ -757,8 +755,8 @@
 | consentement_recap | string | non | Résumé de l'opération |
 | consentement_methode | string | non | Méthode de consentement |
 | consentement_confirme_le | string (datetime) | non | Date/heure de confirmation |
-| cni_recto | string (base64) | non | Image recto de la CNIB |
-| cni_verso | string (base64) | non | Image verso de la CNIB |
+
+Les images de pièces d'identité ne sont pas prises en charge ni conservées par l'API.
 
 **Réponse de succès :** [VÉRIFIÉ PAR EXÉCUTION]
 ```json

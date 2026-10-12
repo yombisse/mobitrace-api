@@ -370,8 +370,6 @@ class TransactionService
             'numero_piece' => $data['numero_piece'] ?? null,
             'date_delivrance_piece' => $data['date_delivrance_piece'] ?? null,
             'date_expiration_piece' => $data['date_expiration_piece'] ?? null,
-            'cni_recto' => $data['cni_recto'] ?? null,
-            'cni_verso' => $data['cni_verso'] ?? null,
         ];
     }
 

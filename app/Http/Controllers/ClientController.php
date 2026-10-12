@@ -50,8 +50,6 @@ class ClientController extends Controller
                 'numero_piece' => $client->numero_piece,
                 'date_delivrance_piece' => $client->date_delivrance_piece?->toDateString(),
                 'date_expiration_piece' => $client->date_expiration_piece?->toDateString(),
-                'cni_recto' => $client->cni_recto,
-                'cni_verso' => $client->cni_verso,
             ],
         ]);
     }
