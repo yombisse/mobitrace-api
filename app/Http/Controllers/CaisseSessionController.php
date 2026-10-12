@@ -9,7 +9,6 @@ use App\Models\AgentReseau;
 use App\Models\AjustementCaisse;
 use App\Models\CaisseSession;
 use App\Models\Transaction;
-use App\Models\User;
 use App\Services\CaisseService;
 use App\Services\SessionCaissePdfService;
 use App\Support\ApiResponse;
@@ -137,9 +136,9 @@ class CaisseSessionController extends Controller
         $query = CaisseSession::whereHas('agentReseau', function ($query) use ($user) {
             $query->where('user_id', $user->id);
         })
-        ->where('statut', 'cloturee')
-        ->with(['agentReseau.reseau'])
-        ->orderBy('cloturee_at', 'desc');
+            ->where('statut', 'cloturee')
+            ->with(['agentReseau.reseau'])
+            ->orderBy('cloturee_at', 'desc');
 
         // Filtres optionnels
         if ($request->has('reseau_id')) {
@@ -295,8 +294,8 @@ class CaisseSessionController extends Controller
             $filepath = $this->pdfService->generateBilanSession($user, $sessionId);
 
             return Response::download($filepath)->deleteFileAfterSend(true);
-        } catch (\Exception $e) {
-            throw new ApiException($e->getMessage(), 422);
+        } catch (\Exception) {
+            throw new ApiException('Impossible de générer le PDF de session.', 422);
         }
     }
 }

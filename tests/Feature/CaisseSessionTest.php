@@ -2,14 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\ApiException;
+use App\Http\Controllers\CaisseSessionController;
+use App\Http\Controllers\MesReseauxController;
+use App\Http\Resources\TransactionResource;
 use App\Models\AgentReseau;
 use App\Models\CaisseSession;
 use App\Models\Client;
 use App\Models\Reseau;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\CaisseService;
 use App\Services\SessionCaissePdfService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Mockery;
 use Tests\TestCase;
 
 class CaisseSessionTest extends TestCase
@@ -17,7 +25,9 @@ class CaisseSessionTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Reseau $reseau;
+
     private AgentReseau $agentReseau;
 
     protected function setUp(): void
@@ -66,6 +76,19 @@ class CaisseSessionTest extends TestCase
                 unlink($filepath);
             }
         }
+    }
+
+    public function test_cash_session_opening_log_contains_only_technical_ids()
+    {
+        Log::shouldReceive('info')
+            ->once()
+            ->with('Ouverture session caisse', Mockery::on(function (array $context): bool {
+                return array_keys($context) === ['session_id', 'user_id']
+                    && $context['user_id'] === $this->user->id
+                    && CaisseSession::whereKey($context['session_id'])->exists();
+            }));
+
+        app(CaisseService::class)->ouvrirSession($this->agentReseau, 100000, 100000);
     }
 
     public function test_scenario_principal_sessions_et_transactions()
@@ -153,7 +176,7 @@ class CaisseSessionTest extends TestCase
         $this->assertEquals($session1->id, $tx2->caisse_session_id);
 
         // S2 ouverte à 200000/200000 (écrasement, écart par rapport à S1)
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $session2 = $service->ouvrirSession(
             $this->agentReseau,
             200000,
@@ -259,9 +282,9 @@ class CaisseSessionTest extends TestCase
             'cloturee_at' => now()->subMinutes(30),
         ]);
 
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
 
-        $this->expectException(\App\Exceptions\ApiException::class);
+        $this->expectException(ApiException::class);
         $this->expectExceptionMessage('Cette session est déjà clôturée');
 
         $service->cloturerSession($session, 100000, 100000, null);
@@ -337,7 +360,7 @@ class CaisseSessionTest extends TestCase
         ]);
 
         // Calculer théorique
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $soldesTheoriques = $service->calculerSoldesTheoriques($session);
 
         // La transaction annulée ne doit pas être comptée
@@ -348,7 +371,7 @@ class CaisseSessionTest extends TestCase
     public function test_ouverture_sans_ecart()
     {
         // Première session : ouverture sans écart (pas de session précédente)
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $session = $service->ouvrirSession($this->agentReseau, 100000, 100000);
 
         $this->assertNull($session->ecart_float_ouverture);
@@ -372,9 +395,9 @@ class CaisseSessionTest extends TestCase
         ]);
 
         // Tenter d'ouvrir avec un écart > 500 sans justification
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
 
-        $this->expectException(\App\Exceptions\ApiException::class);
+        $this->expectException(ApiException::class);
         $this->expectExceptionMessage('La justification est obligatoire car l\'écart dépasse le seuil de 500');
 
         $service->ouvrirSession($this->agentReseau, 200000, 100000);
@@ -396,7 +419,7 @@ class CaisseSessionTest extends TestCase
         ]);
 
         // Ouvrir avec un écart > 500 avec justification
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $session2 = $service->ouvrirSession(
             $this->agentReseau,
             200000,
@@ -426,7 +449,7 @@ class CaisseSessionTest extends TestCase
         ]);
 
         // Ouvrir avec un écart ≤ 500 sans justification
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $session2 = $service->ouvrirSession($this->agentReseau, 100300, 100000);
 
         $session2->refresh();
@@ -438,7 +461,7 @@ class CaisseSessionTest extends TestCase
     public function test_premiere_ouverture_sans_comparaison()
     {
         // Utiliser un réseau différent pour créer un nouvel agent_reseau
-        $newReseau = \App\Models\Reseau::create([
+        $newReseau = Reseau::create([
             'nom' => 'Orange Money',
             'code' => 'OM',
             'logo' => null,
@@ -452,7 +475,7 @@ class CaisseSessionTest extends TestCase
             'solde_cash' => 0,
         ]);
 
-        $service = app(\App\Services\CaisseService::class);
+        $service = app(CaisseService::class);
         $session = $service->ouvrirSession($newAgent, 50000, 50000);
 
         $this->assertNull($session->ecart_float_ouverture);
@@ -475,8 +498,8 @@ class CaisseSessionTest extends TestCase
         ]);
 
         // Vérifier via MesReseauxController
-        $controller = new \App\Http\Controllers\MesReseauxController();
-        $request = \Illuminate\Http\Request::create('/api/v1/reseaux', 'GET');
+        $controller = new MesReseauxController;
+        $request = Request::create('/api/v1/reseaux', 'GET');
         $request->setUserResolver(fn () => $this->user);
 
         $response = $controller->index($request);
@@ -490,8 +513,8 @@ class CaisseSessionTest extends TestCase
     public function test_solde_suggere_null_sans_cloture()
     {
         // Aucune session clôturée
-        $controller = new \App\Http\Controllers\MesReseauxController();
-        $request = \Illuminate\Http\Request::create('/api/v1/reseaux', 'GET');
+        $controller = new MesReseauxController;
+        $request = Request::create('/api/v1/reseaux', 'GET');
         $request->setUserResolver(fn () => $this->user);
 
         $response = $controller->index($request);
@@ -516,12 +539,12 @@ class CaisseSessionTest extends TestCase
             'ouverte_at' => now(),
         ]);
 
-        $pdfService = $this->getMockBuilder(\App\Services\SessionCaissePdfService::class)
+        $pdfService = $this->getMockBuilder(SessionCaissePdfService::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $controller = new \App\Http\Controllers\CaisseSessionController(app(\App\Services\CaisseService::class), $pdfService);
-        $request = \Illuminate\Http\Request::create('/api/v1/caisse/sessions/' . $session->id . '/bilan', 'GET');
+        $controller = new CaisseSessionController(app(CaisseService::class), $pdfService);
+        $request = Request::create('/api/v1/caisse/sessions/'.$session->id.'/bilan', 'GET');
         $request->setUserResolver(fn () => $this->user);
 
         $response = $controller->bilan($request, $session->id);
@@ -555,7 +578,7 @@ class CaisseSessionTest extends TestCase
             'version' => 1,
         ]);
 
-        $resource = new \App\Http\Resources\TransactionResource($tx1);
+        $resource = new TransactionResource($tx1);
         $this->assertTrue($resource->toArray(request())['modifiable']);
 
         // Transaction de session ouverte (modifiable)
@@ -581,7 +604,7 @@ class CaisseSessionTest extends TestCase
         ]);
 
         $tx2->load('caisseSession');
-        $resource2 = new \App\Http\Resources\TransactionResource($tx2);
+        $resource2 = new TransactionResource($tx2);
         $this->assertTrue($resource2->toArray(request())['modifiable']);
 
         // Transaction de session clôturée (non modifiable)
@@ -592,7 +615,7 @@ class CaisseSessionTest extends TestCase
 
         $tx2->refresh();
         $tx2->load('caisseSession');
-        $resource3 = new \App\Http\Resources\TransactionResource($tx2);
+        $resource3 = new TransactionResource($tx2);
         $this->assertFalse($resource3->toArray(request())['modifiable']);
 
         // Transaction ANNULEE (non modifiable)
@@ -609,7 +632,7 @@ class CaisseSessionTest extends TestCase
         ]);
 
         $tx3->load('caisseSession');
-        $resource4 = new \App\Http\Resources\TransactionResource($tx3);
+        $resource4 = new TransactionResource($tx3);
         $this->assertFalse($resource4->toArray(request())['modifiable']);
     }
 }

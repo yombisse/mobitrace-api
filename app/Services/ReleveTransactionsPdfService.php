@@ -2,14 +2,17 @@
 
 namespace App\Services;
 
+use App\Models\Reseau;
 use App\Models\Transaction;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use TCPDF;
 
 class ReleveTransactionsPdfService
 {
     private const MAX_EXPORT_ROWS = 2000;
+
     private const CHUNK_SIZE = 200;
 
     public function generate(User $user, array $filters): string
@@ -51,8 +54,8 @@ class ReleveTransactionsPdfService
             // Écrire l'en-tête avec CSS background-color (plus simple que TCPDF RoundedRect)
             $headerHtml = view('exports.releve-entete', [
                 'agent' => $user,
-                'debut' => \Carbon\Carbon::parse($filters['debut']),
-                'fin' => \Carbon\Carbon::parse($filters['fin']),
+                'debut' => Carbon::parse($filters['debut']),
+                'fin' => Carbon::parse($filters['fin']),
                 'reseau' => $filters['reseau'] ?? null,
                 'generatedAt' => now(),
             ])->render();
@@ -68,25 +71,9 @@ class ReleveTransactionsPdfService
                 ->orderBy('created_at', 'asc');
 
             if (! empty($filters['reseau'])) {
-                Log::info('Filtrage par réseau', [
-                    'reseau_code_received' => $filters['reseau'],
-                    'user_id' => $user->id,
-                ]);
-
-                $reseau = \App\Models\Reseau::whereRaw('LOWER(code) = ?', [strtolower($filters['reseau'])])->first();
+                $reseau = Reseau::whereRaw('LOWER(code) = ?', [strtolower($filters['reseau'])])->first();
                 if ($reseau) {
                     $query->where('reseau_id', $reseau->id);
-                    Log::info('Réseau trouvé', [
-                        'reseau_id' => $reseau->id,
-                        'reseau_code' => $reseau->code,
-                        'reseau_nom' => $reseau->nom,
-                    ]);
-                } else {
-                    Log::warning('Réseau non trouvé pour l\'export', [
-                        'reseau_code_requested' => $filters['reseau'],
-                        'available_reseaux' => \App\Models\Reseau::pluck('code')->toArray(),
-                        'user_id' => $user->id,
-                    ]);
                 }
             }
 
@@ -139,8 +126,9 @@ class ReleveTransactionsPdfService
             return $filepath;
         } catch (\Exception $e) {
             Log::error('Erreur lors de la génération du PDF', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'error_code' => $e->getCode(),
+                'exception_class' => $e::class,
             ]);
             throw $e;
         }

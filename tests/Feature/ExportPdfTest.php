@@ -7,6 +7,8 @@ use App\Models\Reseau;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ExportPdfTest extends TestCase
@@ -60,7 +62,7 @@ class ExportPdfTest extends TestCase
         $endDate = $today->format('Y-m-d');
 
         Transaction::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'user_id' => $this->user1->id,
             'client_id' => $this->client->id,
             'reseau_id' => $this->reseau->id,
@@ -137,7 +139,7 @@ class ExportPdfTest extends TestCase
         $endDate = $today->format('Y-m-d');
 
         Transaction::create([
-            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'id' => (string) Str::uuid(),
             'user_id' => $this->user1->id,
             'client_id' => $this->client->id,
             'reseau_id' => $this->reseau->id,
@@ -154,13 +156,21 @@ class ExportPdfTest extends TestCase
 
         $token = $this->user2->createToken('test')->plainTextToken;
 
+        Log::shouldReceive('error')
+            ->once()
+            ->with('Erreur lors de la génération du PDF', [
+                'user_id' => $this->user2->id,
+                'error_code' => 0,
+                'exception_class' => \Exception::class,
+            ]);
+
         $response = $this->withToken($token)
             ->get('/api/v1/transactions/export?debut='.$startDate.'&fin='.$endDate);
 
         $response->assertStatus(500);
         $response->assertJson([
             'success' => false,
-            'message' => 'Aucune transaction trouvée pour cette période.',
+            'message' => 'Impossible de générer le PDF.',
         ]);
     }
 

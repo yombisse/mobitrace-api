@@ -68,23 +68,6 @@ class CaisseService
             $ecartFloatOuverture = $soldeFloatReference !== null ? $soldeFloatOuverture - $soldeFloatReference : null;
             $ecartCashOuverture = $soldeCashReference !== null ? $soldeCashOuverture - $soldeCashReference : null;
 
-            // Journaliser les soldes avant écrasement
-            $soldeFloatAvant = $agentReseau->solde_float;
-            $soldeCashAvant = $agentReseau->solde_cash;
-
-            Log::info('Ouverture session caisse', [
-                'agent_reseau_id' => $agentReseau->id,
-                'solde_float_reference' => $soldeFloatReference,
-                'solde_cash_reference' => $soldeCashReference,
-                'solde_float_avant' => $soldeFloatAvant,
-                'solde_cash_avant' => $soldeCashAvant,
-                'solde_float_ouverture' => $soldeFloatOuverture,
-                'solde_cash_ouverture' => $soldeCashOuverture,
-                'ecart_float_ouverture' => $ecartFloatOuverture,
-                'ecart_cash_ouverture' => $ecartCashOuverture,
-                'justification_ouverture' => $justification,
-            ]);
-
             // Vérifier si justification requise (écart > seuil)
             $seuilEcart = config('caisse.seuil_ecart', 500);
             $justificationRequise = false;
@@ -138,6 +121,11 @@ class CaisseService
                 'ecart_float' => $ecartFloatOuverture,
                 'ecart_cash' => $ecartCashOuverture,
             ];
+
+            Log::info('Ouverture session caisse', [
+                'session_id' => $session->id,
+                'user_id' => $agentReseau->user_id,
+            ]);
 
             return $session;
         });
@@ -209,7 +197,7 @@ class CaisseService
         if (abs($ecartFloat) > $seuilEcart || abs($ecartCash) > $seuilEcart) {
             if (empty($justification)) {
                 throw new ApiException(
-                    'La justification est obligatoire car l\'écart dépasse le seuil de '.$seuilEcart.'.'. 
+                    'La justification est obligatoire car l\'écart dépasse le seuil de '.$seuilEcart.'.'.
                     422,
                     [
                         'justification' => ['La justification est obligatoire car l\'écart dépasse le seuil de '.$seuilEcart.'.'],
@@ -253,21 +241,21 @@ class CaisseService
         // Vérifier que le solde final ne sera pas négatif
         $nouveauSoldeFloat = $agentReseau->solde_float + $montantFloat;
         if ($nouveauSoldeFloat < 0) {
-            throw new ApiException('Le solde float ne peut pas être négatif après ajustement. Solde actuel : ' . number_format($agentReseau->solde_float, 0, ',', ' ') . ' FCFA.', 422);
+            throw new ApiException('Le solde float ne peut pas être négatif après ajustement. Solde actuel : '.number_format($agentReseau->solde_float, 0, ',', ' ').' FCFA.', 422);
         }
 
         $nouveauSoldeCash = $agentReseau->solde_cash + $montantCash;
         if ($nouveauSoldeCash < 0) {
-            throw new ApiException('Le solde cash ne peut pas être négatif après ajustement. Solde actuel : ' . number_format($agentReseau->solde_cash, 0, ',', ' ') . ' FCFA.', 422);
+            throw new ApiException('Le solde cash ne peut pas être négatif après ajustement. Solde actuel : '.number_format($agentReseau->solde_cash, 0, ',', ' ').' FCFA.', 422);
         }
 
         // Vérifier que le montant n'excède pas la capacité de la base de données (999,999,999,999,999.99)
         $montantMax = 999999999999999.99;
         if (abs($montantFloat) > $montantMax) {
-            throw new ApiException('Le montant float est trop élevé. Maximum autorisé : ' . number_format($montantMax, 0, ',', ' ') . ' FCFA.', 422);
+            throw new ApiException('Le montant float est trop élevé. Maximum autorisé : '.number_format($montantMax, 0, ',', ' ').' FCFA.', 422);
         }
         if (abs($montantCash) > $montantMax) {
-            throw new ApiException('Le montant cash est trop élevé. Maximum autorisé : ' . number_format($montantMax, 0, ',', ' ') . ' FCFA.', 422);
+            throw new ApiException('Le montant cash est trop élevé. Maximum autorisé : '.number_format($montantMax, 0, ',', ' ').' FCFA.', 422);
         }
 
         $ajustement = AjustementCaisse::create([

@@ -110,8 +110,10 @@ class SessionCaissePdfService
             return $filepath;
         } catch (\Exception $e) {
             Log::error('Erreur lors de la génération du PDF de session', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+                'error_code' => $e->getCode(),
+                'exception_class' => $e::class,
             ]);
             throw $e;
         }

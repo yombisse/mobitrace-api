@@ -15,7 +15,7 @@ use App\Support\ApiResponse;
 use App\Support\Pagination;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TransactionController extends Controller
 {
@@ -77,7 +77,7 @@ class TransactionController extends Controller
         );
     }
 
-    public function export(ExportTransactionRequest $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\JsonResponse
+    public function export(ExportTransactionRequest $request): BinaryFileResponse|JsonResponse
     {
         try {
             $filepath = $this->pdfService->generate($request->user(), $request->validated());
@@ -88,10 +88,10 @@ class TransactionController extends Controller
                 'Content-Type' => 'application/pdf',
                 'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             ])->deleteFileAfterSend(app()->environment('testing') ? false : true);
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Impossible de générer le PDF.',
             ], 500);
         }
     }
