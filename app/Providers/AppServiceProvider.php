@@ -29,12 +29,30 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('auth', function (Request $request): Limit {
             return Limit::perMinute((int) env('AUTH_RATE_LIMIT', 10))
-                ->by($request->input('telephone', $request->ip()).'|'.$request->ip());
+                ->by(hash(
+                    'sha256',
+                    mb_strtolower((string) $request->input('telephone', '')).'|'.$request->ip(),
+                ));
         });
 
         RateLimiter::for('forgot-password', function (Request $request): Limit {
             return Limit::perMinute((int) env('FORGOT_PASSWORD_RATE_LIMIT', 3))
-                ->by($request->input('email', $request->ip()).'|'.$request->ip());
+                ->by(hash(
+                    'sha256',
+                    mb_strtolower((string) $request->input('email', '')).'|'.$request->ip(),
+                ));
+        });
+
+        RateLimiter::for('reset-password', function (Request $request): Limit {
+            return Limit::perMinutes(15, 5)
+                ->by(hash(
+                    'sha256',
+                    mb_strtolower((string) $request->input('email', '')).'|'.$request->ip(),
+                ))
+                ->response(fn (Request $request, array $headers) => response()->json([
+                    'success' => false,
+                    'message' => 'Trop de tentatives. Réessayez plus tard.',
+                ], 429, $headers));
         });
     }
 }

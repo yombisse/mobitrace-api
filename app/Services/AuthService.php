@@ -107,6 +107,7 @@ class AuthService
                 ->whereNull('used_at')
                 ->where('expires_at', '>', now())
                 ->latest('created_at')
+                ->lockForUpdate()
                 ->first();
 
             if ($resetCode === null || ! Hash::check($code, $resetCode->code)) {

@@ -8,7 +8,8 @@ Route::middleware('throttle:auth')->group(function (): void {
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
         ->middleware('throttle:forgot-password');
-    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:reset-password');
 });
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function (): void {

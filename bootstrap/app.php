@@ -1,15 +1,18 @@
 <?php
 
 use App\Exceptions\ApiException;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -62,6 +65,25 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 404);
         });
 
+        $exceptions->render(function (ThrottleRequestsException $exception, Request $request): ?JsonResponse {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Trop de tentatives. Réessayez plus tard.',
+            ], 429, $exception->getHeaders());
+        });
+
+        $exceptions->render(function (HttpResponseException $exception, Request $request): ?Response {
+            if (! $request->is('api/*') && ! $request->expectsJson()) {
+                return null;
+            }
+
+            return $exception->getResponse();
+        });
+
         $exceptions->render(function (ValidationException $exception, Request $request): ?JsonResponse {
             if (! $request->is('api/*') && ! $request->expectsJson()) {
                 return null;
@@ -85,6 +107,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 || $exception instanceof AccessDeniedHttpException
                 || $exception instanceof ModelNotFoundException
                 || $exception instanceof NotFoundHttpException
+                || $exception instanceof ThrottleRequestsException
+                || $exception instanceof HttpResponseException
                 || $exception instanceof ValidationException) {
                 return null;
             }
