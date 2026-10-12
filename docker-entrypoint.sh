@@ -2,10 +2,6 @@
 
 cd /var/www/html || exit 1
 
-echo "============================================"
-echo "   REINITIALISATION DE LA BASE DE DONNEES"
-echo "============================================"
-
 echo ">> Vérification de la connexion à la base distante..."
 
 php artisan migrate:status || {
@@ -13,24 +9,31 @@ php artisan migrate:status || {
     exit 1
 }
 
-echo ">> Suppression des tables et réexécution des migrations..."
+echo ">> Exécution des migrations..."
 
-php artisan migrate:fresh --seed --force || {
-    echo "ERREUR : la réinitialisation ou le seeding a échoué."
+php artisan migrate --force || {
+    echo "ERREUR : les migrations ont échoué."
+    exit 1
+}
+
+echo ">> Initialisation des données de référence..."
+
+php artisan db:seed --class=ReferenceDataSeeder --force || {
+    echo "ERREUR : le seeding des données de référence a échoué."
     exit 1
 }
 
 echo ">> Optimisation du cache de configuration..."
-php artisan config:cache || true
+php artisan config:cache || exit 1
 
 echo ">> Optimisation du cache des routes..."
-php artisan route:cache || true
+php artisan route:cache || exit 1
 
 echo ">> Attribution des permissions..."
-chown -R www-data:www-data storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache || exit 1
 
 echo "============================================"
-echo "   REINITIALISATION TERMINEE"
+echo "   DEMARRAGE PRET"
 echo "============================================"
 
 exec "$@"
