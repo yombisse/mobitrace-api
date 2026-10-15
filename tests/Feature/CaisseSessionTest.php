@@ -36,6 +36,7 @@ class CaisseSessionTest extends TestCase
 
         $this->user = User::factory()->create();
         $this->reseau = Reseau::factory()->create([
+            'owner_user_id' => $this->user->id,
             'nom' => 'Telecel Money',
             'code' => 'TM',
         ]);
@@ -462,6 +463,7 @@ class CaisseSessionTest extends TestCase
     {
         // Utiliser un réseau différent pour créer un nouvel agent_reseau
         $newReseau = Reseau::create([
+            'owner_user_id' => $this->user->id,
             'nom' => 'Orange Money',
             'code' => 'OM',
             'logo' => null,

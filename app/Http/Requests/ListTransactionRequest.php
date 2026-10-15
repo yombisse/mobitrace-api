@@ -15,7 +15,11 @@ class ListTransactionRequest extends ApiRequest
             'date_debut' => ['sometimes', 'date', 'before_or_equal:today'],
             'date_fin' => ['sometimes', 'date', 'after_or_equal:date_debut', 'before_or_equal:today'],
             'periode' => ['sometimes', Rule::in(['aujourdhui', '7jours', 'cemois', 'personnalisee'])],
-            'reseau_id' => ['sometimes', 'uuid', 'exists:reseaux,id'],
+            'reseau_id' => [
+                'sometimes',
+                'uuid',
+                Rule::exists('reseaux', 'id')->where('owner_user_id', $this->user()->getKey()),
+            ],
             'reseau_code' => ['sometimes', 'string', 'max:10'],
             'type_operation' => ['sometimes', Rule::in(['depot', 'retrait'])],
             'statut' => ['sometimes', Rule::in(['ENREGISTREE', 'MODIFIEE', 'ANNULEE'])],

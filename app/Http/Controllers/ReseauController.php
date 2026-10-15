@@ -20,12 +20,12 @@ class ReseauController extends Controller
     {
         $withDeleted = $request->boolean('avec_supprimes');
 
-        return ReseauResource::collection($this->reseauService->list($withDeleted));
+        return ReseauResource::collection($this->reseauService->list($request->user(), $withDeleted));
     }
 
     public function store(StoreReseauRequest $request): JsonResponse
     {
-        $reseau = $this->reseauService->create($request->validated());
+        $reseau = $this->reseauService->create($request->user(), $request->validated());
 
         return ApiResponse::success(
             ReseauResource::make($reseau)->resolve($request),
@@ -36,7 +36,7 @@ class ReseauController extends Controller
 
     public function update(UpdateReseauRequest $request, Reseau $reseau): JsonResponse
     {
-        $reseau = $this->reseauService->update($reseau, $request->validated());
+        $reseau = $this->reseauService->update($request->user(), $reseau, $request->validated());
 
         return ApiResponse::success(
             ReseauResource::make($reseau)->resolve($request),
@@ -44,9 +44,9 @@ class ReseauController extends Controller
         );
     }
 
-    public function destroy(Reseau $reseau): JsonResponse
+    public function destroy(Request $request, Reseau $reseau): JsonResponse
     {
-        $this->reseauService->delete($reseau);
+        $this->reseauService->delete($request->user(), $reseau);
 
         return ApiResponse::success(null, 'Réseau supprimé avec succès.');
     }

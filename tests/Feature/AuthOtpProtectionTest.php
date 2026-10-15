@@ -48,7 +48,7 @@ class AuthOtpProtectionTest extends TestCase
             'code' => Hash::make($expiredCode),
             'expires_at' => now()->subMinute(),
         ]);
-        $newPassword = Str::random(32);
+        $newPassword = 'Passw0rd!';
 
         $payload = [
             'email' => $user->email,
@@ -69,7 +69,7 @@ class AuthOtpProtectionTest extends TestCase
     {
         $telephone = (string) random_int(60000000, 79999999);
         $email = Str::uuid().'@example.test';
-        $password = Str::random(32);
+        $password = 'Passw0rd!';
 
         for ($attempt = 0; $attempt < 10; $attempt++) {
             $this->postJson('/api/v1/auth/login', [

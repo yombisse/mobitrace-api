@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(TransactionHistory::class);
     }
+
+    public function reseaux(): HasMany
+    {
+        return $this->hasMany(Reseau::class, 'owner_user_id');
+    }
 }

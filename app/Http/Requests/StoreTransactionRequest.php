@@ -21,7 +21,9 @@ class StoreTransactionRequest extends ApiRequest
             'reseau_id' => [
                 'required',
                 'uuid',
-                Rule::exists('reseaux', 'id')->whereNull('deleted_at'),
+                Rule::exists('reseaux', 'id')
+                    ->where('owner_user_id', $this->user()->getKey())
+                    ->whereNull('deleted_at'),
             ],
             'type_operation' => ['required', Rule::in(['depot', 'retrait'])],
             'montant' => ['required', 'numeric', 'gt:0'],

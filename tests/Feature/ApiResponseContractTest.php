@@ -16,8 +16,8 @@ class ApiResponseContractTest extends TestCase
         $this->postJson('/api/v1/auth/register', [
             'name' => 'Agent Mobile',
             'telephone' => '70000003',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Passw0rd!',
+            'password_confirmation' => 'Passw0rd!',
         ])
             ->assertCreated()
             ->assertJsonStructure([
@@ -33,12 +33,12 @@ class ApiResponseContractTest extends TestCase
     {
         $user = User::factory()->create([
             'telephone' => '70000001',
-            'password' => 'password',
+            'password' => 'Passw0rd!',
         ]);
 
         $login = $this->postJson('/api/v1/auth/login', [
             'telephone' => '70000001',
-            'password' => 'password',
+            'password' => 'Passw0rd!',
         ]);
 
         $login->assertOk()
@@ -61,7 +61,13 @@ class ApiResponseContractTest extends TestCase
     public function test_transaction_workflow_and_read_endpoints_use_the_standard_envelope(): void
     {
         $user = User::factory()->create();
-        $reseau = Reseau::factory()->create();
+        $reseau = Reseau::factory()->create(['owner_user_id' => $user->id]);
+
+        $this->actingAs($user)->postJson('/api/v1/caisse/sessions/ouvrir', [
+            'reseau_id' => $reseau->id,
+            'solde_float_ouverture' => 70000,
+            'solde_cash_ouverture' => 70000,
+        ])->assertCreated();
 
         $created = $this->actingAs($user)->postJson('/api/v1/transactions', [
             'telephone' => '70000002',

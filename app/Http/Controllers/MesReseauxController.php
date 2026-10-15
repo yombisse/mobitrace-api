@@ -6,7 +6,6 @@ use App\Http\Requests\Caisse\ToggleReseauRequest;
 use App\Models\AgentReseau;
 use App\Models\CaisseSession;
 use App\Models\Reseau;
-use App\Models\User;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,10 +16,11 @@ class MesReseauxController extends Controller
     {
         $user = $request->user();
 
-        $reseaux = Reseau::leftJoin('agent_reseaux', function ($join) use ($user) {
-            $join->on('reseaux.id', '=', 'agent_reseaux.reseau_id')
-                ->where('agent_reseaux.user_id', $user->id);
-        })
+        $reseaux = Reseau::where('reseaux.owner_user_id', $user->id)
+            ->leftJoin('agent_reseaux', function ($join) use ($user) {
+                $join->on('reseaux.id', '=', 'agent_reseaux.reseau_id')
+                    ->where('agent_reseaux.user_id', $user->id);
+            })
             ->select([
                 'reseaux.id',
                 'reseaux.nom',
@@ -71,8 +71,9 @@ class MesReseauxController extends Controller
     {
         $user = $request->user();
 
+        $reseau = Reseau::where('owner_user_id', $user->id)->findOrFail($reseauId);
         $agentReseau = AgentReseau::firstOrCreate(
-            ['user_id' => $user->id, 'reseau_id' => $reseauId],
+            ['user_id' => $user->id, 'reseau_id' => $reseau->id],
             ['actif' => true, 'solde_float' => 0, 'solde_cash' => 0]
         );
 

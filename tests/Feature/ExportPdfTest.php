@@ -38,6 +38,7 @@ class ExportPdfTest extends TestCase
         ]);
 
         $this->reseau = Reseau::factory()->create([
+            'owner_user_id' => $this->user1->id,
             'code' => 'OM',
             'nom' => 'Orange Money',
         ]);

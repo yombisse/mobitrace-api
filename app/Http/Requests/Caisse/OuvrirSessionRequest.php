@@ -10,7 +10,11 @@ class OuvrirSessionRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'reseau_id' => ['required', 'uuid', Rule::exists('reseaux', 'id')],
+            'reseau_id' => [
+                'required',
+                'uuid',
+                Rule::exists('reseaux', 'id')->where('owner_user_id', $this->user()->getKey()),
+            ],
             'solde_float_ouverture' => ['required', 'numeric', 'gte:0'],
             'solde_cash_ouverture' => ['required', 'numeric', 'gte:0'],
             'justification' => ['nullable', 'string'],

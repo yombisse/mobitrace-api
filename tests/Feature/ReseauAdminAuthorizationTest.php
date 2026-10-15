@@ -12,19 +12,26 @@ class ReseauAdminAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_regular_agent_cannot_create_update_or_delete_networks_or_grant_admin_role(): void
+    public function test_agent_can_manage_owned_networks_but_not_other_agents_networks_or_grant_admin_role(): void
     {
         $agent = User::factory()->create();
-        $reseau = Reseau::factory()->create();
+        $otherAgent = User::factory()->create();
+        $otherReseau = Reseau::factory()->create(['owner_user_id' => $otherAgent->id]);
         $this->actingAs($agent, 'sanctum');
 
-        $this->postJson('/api/v1/reseaux', [
-            'nom' => 'Réseau interdit',
-        ])->assertForbidden();
-        $this->patchJson('/api/v1/reseaux/'.$reseau->id, [
-            'nom' => 'Réseau modifié',
-        ])->assertForbidden();
-        $this->deleteJson('/api/v1/reseaux/'.$reseau->id)->assertForbidden();
+        $response = $this->postJson('/api/v1/reseaux', [
+            'nom' => 'Mon réseau',
+            'code' => 'MON-RESEAU',
+        ])->assertCreated();
+        $reseauId = $response->json('data.id');
+
+        $this->patchJson('/api/v1/reseaux/'.$reseauId, [
+            'nom' => 'Mon réseau modifié',
+        ])->assertOk();
+        $this->patchJson('/api/v1/reseaux/'.$otherReseau->id, [
+            'nom' => 'Tentative interdite',
+        ])->assertNotFound();
+        $this->deleteJson('/api/v1/reseaux/'.$otherReseau->id)->assertNotFound();
 
         $this->patchJson('/api/v1/auth/me', [
             'name' => 'Agent',
@@ -32,10 +39,14 @@ class ReseauAdminAuthorizationTest extends TestCase
         ])->assertOk();
 
         $this->assertFalse($agent->fresh()->is_admin);
-        $this->assertDatabaseMissing('reseaux', ['nom' => 'Réseau interdit']);
+        $this->assertDatabaseHas('reseaux', [
+            'id' => $reseauId,
+            'owner_user_id' => $agent->id,
+            'nom' => 'Mon réseau modifié',
+        ]);
     }
 
-    public function test_administrator_can_create_update_and_delete_networks(): void
+    public function test_any_agent_can_create_update_and_delete_their_own_networks(): void
     {
         $admin = User::factory()->create();
         DB::table('users')->where('id', $admin->id)->update(['is_admin' => true]);
@@ -55,14 +66,58 @@ class ReseauAdminAuthorizationTest extends TestCase
         $this->assertSoftDeleted('reseaux', ['id' => $reseauId]);
     }
 
-    public function test_regular_agent_can_still_read_the_network_catalogue(): void
+    public function test_agents_only_see_their_own_networks_and_may_reuse_another_agents_code(): void
     {
-        $agent = User::factory()->create();
-        $reseau = Reseau::factory()->create();
-        $this->actingAs($agent, 'sanctum');
+        $agentA = User::factory()->create();
+        $agentB = User::factory()->create();
+        $reseauA = Reseau::factory()->create([
+            'owner_user_id' => $agentA->id,
+            'code' => 'OM',
+        ]);
+        $ownedResponse = $this->actingAs($agentB, 'sanctum')
+            ->postJson('/api/v1/reseaux', [
+                'nom' => 'Orange Money',
+                'code' => 'OM',
+            ])
+            ->assertCreated();
+        $reseauBId = $ownedResponse->json('data.id');
 
-        $this->getJson('/api/v1/reseaux')
+        $this->actingAs($agentA, 'sanctum')
+            ->getJson('/api/v1/reseaux')
             ->assertOk()
-            ->assertJsonFragment(['id' => $reseau->id]);
+            ->assertJsonFragment(['id' => $reseauA->id])
+            ->assertJsonMissing(['id' => Reseau::where('owner_user_id', $agentB->id)->value('id')]);
+
+        $this->actingAs($agentB, 'sanctum')
+            ->getJson('/api/v1/mes-reseaux')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $reseauBId])
+            ->assertJsonMissing(['id' => $reseauA->id]);
+    }
+
+    public function test_agent_cannot_open_a_session_or_create_a_transaction_on_another_agents_network(): void
+    {
+        $agentA = User::factory()->create();
+        $agentB = User::factory()->create();
+        $foreignReseau = Reseau::factory()->create(['owner_user_id' => $agentA->id]);
+
+        $this->actingAs($agentB, 'sanctum')
+            ->postJson('/api/v1/caisse/sessions/ouvrir', [
+                'reseau_id' => $foreignReseau->id,
+                'solde_float_ouverture' => 1000,
+                'solde_cash_ouverture' => 1000,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reseau_id']);
+
+        $this->postJson('/api/v1/transactions', [
+            'telephone' => '70000019',
+            'reseau_id' => $foreignReseau->id,
+            'type_operation' => 'depot',
+            'montant' => 1000,
+            'client_confirme' => true,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reseau_id']);
     }
 }

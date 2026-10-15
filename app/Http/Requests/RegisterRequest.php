@@ -12,7 +12,7 @@ class RegisterRequest extends ApiRequest
             'name' => ['required', 'string', 'max:255'],
             'telephone' => ['required', 'string', 'max:20', 'unique:users,telephone'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(6)->mixedCase()->numbers()->symbols()],
         ];
     }
 }

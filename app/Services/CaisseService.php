@@ -6,6 +6,7 @@ use App\Exceptions\ApiException;
 use App\Models\AgentReseau;
 use App\Models\AjustementCaisse;
 use App\Models\CaisseSession;
+use App\Models\Reseau;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +17,17 @@ class CaisseService
 {
     public function getOrCreateAgentReseau(User $user, string $reseauId): AgentReseau
     {
-        return AgentReseau::firstOrCreate(
+        Reseau::where('owner_user_id', $user->getKey())->findOrFail($reseauId);
+        $agentReseau = AgentReseau::firstOrCreate(
             ['user_id' => $user->id, 'reseau_id' => $reseauId],
             ['actif' => true, 'solde_float' => 0, 'solde_cash' => 0]
         );
+
+        if (! $agentReseau->actif) {
+            throw new ApiException('Ce réseau est désactivé.', 422);
+        }
+
+        return $agentReseau;
     }
 
     public function appliquerMouvement(AgentReseau $agentReseau, float $deltaFloat, float $deltaCash): void

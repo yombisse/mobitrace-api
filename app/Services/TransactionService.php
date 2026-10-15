@@ -31,7 +31,9 @@ class TransactionService
                 throw new ApiException('La confirmation du client est requise pour créer une transaction.', 422);
             }
 
-            $reseau = Reseau::query()->findOrFail($data['reseau_id']);
+            $reseau = Reseau::query()
+                ->where('owner_user_id', $user->getKey())
+                ->findOrFail($data['reseau_id']);
             
             // Vérifier la session de caisse ouverte
             $agentReseau = $this->caisseService->getOrCreateAgentReseau($user, $data['reseau_id']);
@@ -135,7 +137,9 @@ class TransactionService
 
         // Filtre par réseau (code)
         if (! empty($filters['reseau_code'])) {
-            $reseau = Reseau::whereRaw('LOWER(code) = ?', [strtolower($filters['reseau_code'])])->first();
+            $reseau = Reseau::where('owner_user_id', $user->getKey())
+                ->whereRaw('LOWER(code) = ?', [strtolower($filters['reseau_code'])])
+                ->first();
             if ($reseau) {
                 $query->where('reseau_id', $reseau->id);
             }

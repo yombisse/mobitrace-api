@@ -10,7 +10,7 @@ class ChangePasswordRequest extends ApiRequest
     {
         return [
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed', Password::min(6)->mixedCase()->numbers()->symbols()],
         ];
     }
 }

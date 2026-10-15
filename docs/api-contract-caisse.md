@@ -20,7 +20,7 @@
 |----------|---------|-----------|------------------|---------------|
 | Liste des réseaux de l'agent | GET | `/api/v1/mes-reseaux` | `MesReseauxController@index` | mes-reseaux |
 | Activation/désactivation d'un réseau | PATCH | `/api/v1/mes-reseaux/{reseau}` | `MesReseauxController@update` | mes-reseaux.update |
-| Liste de tous les réseaux | GET | `/api/v1/reseaux` | `ReseauController@index` | reseaux.index |
+| Liste des réseaux de l'agent | GET | `/api/v1/reseaux` | `ReseauController@index` | reseaux.index |
 | Création d'un réseau | POST | `/api/v1/reseaux` | `ReseauController@store` | reseaux.store |
 | Modification d'un réseau | PATCH | `/api/v1/reseaux/{reseau}` | `ReseauController@update` | reseaux.update |
 | Suppression d'un réseau | DELETE | `/api/v1/reseaux/{reseau}` | `ReseauController@destroy` | reseaux.destroy |
@@ -41,6 +41,14 @@
 | Historique de transaction | GET | `/api/v1/transactions/{transaction}/history` | `TransactionHistoryController@index` | transactions.history |
 
 **Remarque :** Aucun alias d'URL détecté.
+
+## 0.1 Isolation des données
+
+Chaque compte agent est un espace de données indépendant, même lorsque plusieurs agents utilisent la même base de données. Un agent peut créer, modifier et supprimer uniquement ses propres réseaux. Les codes de réseau peuvent être identiques entre deux agents.
+
+Les clients, transactions et opérations de caisse restent limités à l'agent connecté. Une transaction, une session de caisse ou un ajustement ne peut utiliser qu'un réseau appartenant à cet agent. Les identifiants appartenant à un autre agent ne donnent pas accès à ses ressources.
+
+Les réseaux historiques sont attribués à chaque agent qui les utilisait. Lorsqu'un ancien réseau était partagé, la migration crée une copie indépendante par agent et réassocie ses transactions, soldes et références.
 
 ---
 

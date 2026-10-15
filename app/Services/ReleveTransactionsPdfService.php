@@ -71,7 +71,9 @@ class ReleveTransactionsPdfService
                 ->orderBy('created_at', 'asc');
 
             if (! empty($filters['reseau'])) {
-                $reseau = Reseau::whereRaw('LOWER(code) = ?', [strtolower($filters['reseau'])])->first();
+                $reseau = Reseau::where('owner_user_id', $user->getKey())
+                    ->whereRaw('LOWER(code) = ?', [strtolower($filters['reseau'])])
+                    ->first();
                 if ($reseau) {
                     $query->where('reseau_id', $reseau->id);
                 }

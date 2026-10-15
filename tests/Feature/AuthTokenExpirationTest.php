@@ -57,8 +57,8 @@ class AuthTokenExpirationTest extends TestCase
 
     public function test_password_change_revokes_other_tokens_but_keeps_current_token(): void
     {
-        $currentPassword = Str::random(32);
-        $newPassword = Str::random(32);
+        $currentPassword = 'Passw0rd!';
+        $newPassword = 'N3wP@ss!';
         $user = User::factory()->create(['password' => $currentPassword]);
         $currentToken = $user->createToken('mobile');
         $otherToken = $user->createToken('mobile');
@@ -87,7 +87,7 @@ class AuthTokenExpirationTest extends TestCase
             'expires_at' => now()->addMinutes(15),
         ]);
 
-        $newPassword = Str::random(32);
+        $newPassword = 'N3wP@ss!';
         $this->postJson('/api/v1/auth/reset-password', [
             'email' => $user->email,
             'code' => $code,

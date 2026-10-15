@@ -138,8 +138,8 @@ class TransactionListTest extends TestCase
 
     public function test_filtre_par_reseau_par_id()
     {
-        $reseau1 = Reseau::factory()->create(['code' => 'OM']);
-        $reseau2 = Reseau::factory()->create(['code' => 'MV']);
+        $reseau1 = Reseau::factory()->create(['owner_user_id' => $this->user->id, 'code' => 'OM']);
+        $reseau2 = Reseau::factory()->create(['owner_user_id' => $this->user->id, 'code' => 'MV']);
 
         Transaction::factory()->create([
             'user_id' => $this->user->id,
@@ -160,8 +160,8 @@ class TransactionListTest extends TestCase
 
     public function test_filtre_par_reseau_par_code()
     {
-        $reseau1 = Reseau::factory()->create(['code' => 'OM']);
-        $reseau2 = Reseau::factory()->create(['code' => 'MV']);
+        $reseau1 = Reseau::factory()->create(['owner_user_id' => $this->user->id, 'code' => 'OM']);
+        $reseau2 = Reseau::factory()->create(['owner_user_id' => $this->user->id, 'code' => 'MV']);
 
         Transaction::factory()->create([
             'user_id' => $this->user->id,
@@ -400,7 +400,7 @@ class TransactionListTest extends TestCase
 
     public function test_combinaison_filtres_et_type_operation()
     {
-        $reseau = Reseau::factory()->create(['code' => 'OM']);
+        $reseau = Reseau::factory()->create(['owner_user_id' => $this->user->id, 'code' => 'OM']);
 
         Transaction::factory()->create([
             'user_id' => $this->user->id,

@@ -10,7 +10,11 @@ class AjustementCaisseRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'reseau_id' => ['required', 'uuid', Rule::exists('reseaux', 'id')],
+            'reseau_id' => [
+                'required',
+                'uuid',
+                Rule::exists('reseaux', 'id')->where('owner_user_id', $this->user()->getKey()),
+            ],
             'type' => ['required', 'in:recharge,correction'],
             'montant_float' => ['nullable', 'numeric', 'different:0', 'max:999999999999999.99', 'min:-999999999999999.99'],
             'montant_cash' => ['nullable', 'numeric', 'different:0', 'max:999999999999999.99', 'min:-999999999999999.99'],
