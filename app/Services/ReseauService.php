@@ -6,6 +6,7 @@ use App\Models\Reseau;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ReseauService
 {
@@ -22,8 +23,11 @@ class ReseauService
 
     public function create(User $user, array $data): Reseau
     {
+        $baseCode = $this->generateCodeFromName($data['nom']);
+        $this->ensureCodeBaseIsAvailable($user, $baseCode);
+
         if (empty($data['code'] ?? null)) {
-            $data['code'] = $this->generateCodeFromName($user, $data['nom']);
+            $data['code'] = $baseCode;
         }
 
         return DB::transaction(function () use ($user, $data): Reseau {
@@ -61,7 +65,7 @@ class ReseauService
         }
     }
 
-    private function generateCodeFromName(User $user, string $name): string
+    private function generateCodeFromName(string $name): string
     {
         $code = '';
 
@@ -85,14 +89,28 @@ class ReseauService
             $code = substr($code, 0, 50);
         }
 
-        $baseCode = $code;
-        $suffix = 2;
-
-        while ($user->reseaux()->withTrashed()->where('code', $code)->exists()) {
-            $suffixText = '-'.$suffix++;
-            $code = substr($baseCode, 0, 50 - strlen($suffixText)).$suffixText;
-        }
-
         return $code;
+    }
+
+    private function ensureCodeBaseIsAvailable(User $user, string $baseCode): void
+    {
+        $existingCodes = $user->reseaux()
+            ->withTrashed()
+            ->where(function ($query) use ($baseCode): void {
+                $query->where('code', $baseCode)
+                    ->orWhere('code', 'like', $baseCode.'-%');
+            })
+            ->pluck('code');
+
+        foreach ($existingCodes as $existingCode) {
+            if (
+                $existingCode === $baseCode
+                || preg_match('/^'.preg_quote($baseCode, '/').'-\d+$/i', $existingCode) === 1
+            ) {
+                throw ValidationException::withMessages([
+                    'nom' => ['Un réseau avec ce code de base existe déjà. Choisissez un autre nom.'],
+                ]);
+            }
+        }
     }
 }

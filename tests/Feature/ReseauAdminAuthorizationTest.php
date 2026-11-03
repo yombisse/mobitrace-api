@@ -95,7 +95,7 @@ class ReseauAdminAuthorizationTest extends TestCase
             ->assertJsonMissing(['id' => $reseauA->id]);
     }
 
-    public function test_network_code_is_generated_with_a_unique_suffix_for_the_same_agent(): void
+    public function test_agent_cannot_create_a_second_network_with_the_same_generated_code_base(): void
     {
         $agent = User::factory()->create();
         $this->actingAs($agent, 'sanctum');
@@ -105,11 +105,24 @@ class ReseauAdminAuthorizationTest extends TestCase
             ->assertJsonPath('data.code', 'OM');
 
         $this->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
-            ->assertCreated()
-            ->assertJsonPath('data.code', 'OM-2');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nom']);
     }
 
-    public function test_generated_code_avoids_codes_on_soft_deleted_networks(): void
+    public function test_agent_cannot_create_different_network_names_with_the_same_code_base(): void
+    {
+        $agent = User::factory()->create();
+        $this->actingAs($agent, 'sanctum');
+
+        $this->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
+            ->assertCreated();
+
+        $this->postJson('/api/v1/reseaux', ['nom' => 'Orange Mobile'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nom']);
+    }
+
+    public function test_agent_cannot_reuse_a_generated_code_base_from_a_soft_deleted_network(): void
     {
         $agent = User::factory()->create();
         $deletedNetwork = Reseau::factory()->create([
@@ -120,8 +133,23 @@ class ReseauAdminAuthorizationTest extends TestCase
 
         $this->actingAs($agent, 'sanctum')
             ->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
-            ->assertCreated()
-            ->assertJsonPath('data.code', 'OM-2');
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nom']);
+    }
+
+    public function test_agent_cannot_reuse_a_code_base_with_a_legacy_numeric_suffix(): void
+    {
+        $agent = User::factory()->create();
+        Reseau::factory()->create([
+            'owner_user_id' => $agent->id,
+            'nom' => 'Ancien réseau',
+            'code' => 'OM-1',
+        ]);
+
+        $this->actingAs($agent, 'sanctum')
+            ->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['nom']);
     }
 
     public function test_agent_can_create_a_network_with_a_local_logo_uri(): void
