@@ -15,8 +15,8 @@ class ClientService
         $query = $this->ownedQuery($user)
             ->withCount('transactions')
             ->withMax('transactions', 'created_at')
-            ->orderBy('nom')
-            ->orderBy('prenoms');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         if (! empty($filters['telephone'])) {
             $query->where('telephone', $filters['telephone']);

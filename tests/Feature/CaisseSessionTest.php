@@ -92,6 +92,53 @@ class CaisseSessionTest extends TestCase
         app(CaisseService::class)->ouvrirSession($this->agentReseau, 100000, 100000);
     }
 
+    public function test_session_history_supports_offset_pagination()
+    {
+        $sessions = collect([3, 2, 1])->map(function (int $daysAgo): CaisseSession {
+            return CaisseSession::create([
+                'agent_reseau_id' => $this->agentReseau->id,
+                'date' => today()->subDays($daysAgo),
+                'solde_float_ouverture' => 100000,
+                'solde_cash_ouverture' => 80000,
+                'solde_float_theorique' => 100000,
+                'solde_cash_theorique' => 80000,
+                'solde_float_reel' => 100000,
+                'solde_cash_reel' => 80000,
+                'ecart_float' => 0,
+                'ecart_cash' => 0,
+                'statut' => 'cloturee',
+                'ouverte_at' => now()->subDays($daysAgo)->subHour(),
+                'cloturee_at' => now()->subDays($daysAgo),
+            ]);
+        });
+
+        $this->actingAs($this->user, 'sanctum')
+            ->getJson('/api/v1/caisse/sessions/historique?limit=1&offset=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $sessions[1]->id);
+    }
+
+    public function test_open_sessions_include_their_date_for_pending_closures()
+    {
+        $sessionDate = today()->subDay();
+        $session = CaisseSession::create([
+            'agent_reseau_id' => $this->agentReseau->id,
+            'date' => $sessionDate,
+            'solde_float_ouverture' => 100000,
+            'solde_cash_ouverture' => 80000,
+            'statut' => 'ouverte',
+            'ouverte_at' => $sessionDate->copy()->startOfDay()->addHour(),
+        ]);
+
+        $this->actingAs($this->user, 'sanctum')
+            ->getJson('/api/v1/caisse/sessions/aujourdhui')
+            ->assertOk()
+            ->assertJsonPath('data.0.session_id', $session->id)
+            ->assertJsonPath('data.0.statut', 'ouverte')
+            ->assertJsonPath('data.0.date', $sessionDate->toDateString());
+    }
+
     public function test_scenario_principal_sessions_et_transactions()
     {
         // S1 ouverte à 200000/850000 (première session, pas de comparaison)

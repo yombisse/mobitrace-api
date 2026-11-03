@@ -57,6 +57,7 @@ class CaisseSessionController extends Controller
                 ],
                 'statut' => $session->statut,
                 'session_id' => $session->id,
+                'date' => $session->date?->toDateString(),
             ];
         });
 
@@ -155,8 +156,9 @@ class CaisseSessionController extends Controller
             $query->where('date', '<=', $request->input('date_end'));
         }
 
-        $limit = $request->input('limit', 20);
-        $sessions = $query->limit($limit)->get();
+        $limit = min(max((int) $request->input('limit', 20), 1), 100);
+        $offset = max((int) $request->input('offset', 0), 0);
+        $sessions = $query->offset($offset)->limit($limit)->get();
 
         $result = $sessions->map(function ($session) {
             return [
