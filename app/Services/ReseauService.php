@@ -88,7 +88,7 @@ class ReseauService
         $baseCode = $code;
         $suffix = 2;
 
-        while ($user->reseaux()->where('code', $code)->exists()) {
+        while ($user->reseaux()->withTrashed()->where('code', $code)->exists()) {
             $suffixText = '-'.$suffix++;
             $code = substr($baseCode, 0, 50 - strlen($suffixText)).$suffixText;
         }

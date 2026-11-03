@@ -95,6 +95,54 @@ class ReseauAdminAuthorizationTest extends TestCase
             ->assertJsonMissing(['id' => $reseauA->id]);
     }
 
+    public function test_network_code_is_generated_with_a_unique_suffix_for_the_same_agent(): void
+    {
+        $agent = User::factory()->create();
+        $this->actingAs($agent, 'sanctum');
+
+        $this->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
+            ->assertCreated()
+            ->assertJsonPath('data.code', 'OM');
+
+        $this->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
+            ->assertCreated()
+            ->assertJsonPath('data.code', 'OM-2');
+    }
+
+    public function test_generated_code_avoids_codes_on_soft_deleted_networks(): void
+    {
+        $agent = User::factory()->create();
+        $deletedNetwork = Reseau::factory()->create([
+            'owner_user_id' => $agent->id,
+            'code' => 'OM',
+        ]);
+        $deletedNetwork->delete();
+
+        $this->actingAs($agent, 'sanctum')
+            ->postJson('/api/v1/reseaux', ['nom' => 'Orange Money'])
+            ->assertCreated()
+            ->assertJsonPath('data.code', 'OM-2');
+    }
+
+    public function test_agent_can_create_a_network_with_a_local_logo_uri(): void
+    {
+        $agent = User::factory()->create();
+        $logoUri = 'file:///data/user/0/com.mobitrace/cache/network-logo.jpg';
+
+        $this->actingAs($agent, 'sanctum')
+            ->postJson('/api/v1/reseaux', [
+                'nom' => 'Mon réseau',
+                'logo' => $logoUri,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.logo', $logoUri);
+
+        $this->assertDatabaseHas('reseaux', [
+            'owner_user_id' => $agent->id,
+            'logo' => $logoUri,
+        ]);
+    }
+
     public function test_agent_cannot_open_a_session_or_create_a_transaction_on_another_agents_network(): void
     {
         $agentA = User::factory()->create();
